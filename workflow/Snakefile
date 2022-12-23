@@ -66,6 +66,8 @@ def get_targets():
         targets.extend(expand(Path(bids(root=root,**subj_wildcards)).parent,zip,**subj_zip_list))
     return targets
 
+localrules: get_app
+
 rule all:
     input: 
         get_targets()
@@ -96,14 +98,14 @@ rule get_app:
         tag=config['tag'],
         repo=f"repo_{config['name']}_{config['tag']}",
     output:
-        repo=directory("repo_{config['name']}_{config['tag']}"),
+        repo=directory(f"repo_{config['name']}_{config['tag']}"),
     shell:
         'git clone {params.url} -b {params.tag} {params.repo}'
 
 
 rule run_app:
     input:
-        repo="repo_{config['name']}_{config['tag']}",
+        repo=f"repo_{config['name']}_{config['tag']}",
         bids=config['bids_dir'],
     params:
         runscript=f"repo_{config['name']}_{config['tag']}/{config['runscript']}",
