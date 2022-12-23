@@ -5,7 +5,7 @@ writing output to a temp directory (e.g. $SLURM_TMPDIR) and copying the final ou
 
 ## Pre-requisites
 
- - BIDS dataset(s) that also includes a .pybids folder (which can be created with [pybidsdb](https://github.com/pvandyken/pybidsdb)
+ - BIDS dataset(s) that also includes a .pybids folder (which can be created with [pybidsdb](https://github.com/pvandyken/pybidsdb))
  - Virtual environment with snakemake and snakebids activated (can use `source $SNAKEMAKE_VENV_DIR/activate` if using khanlab neuroglia-helpers)
  - A cluster profile to submit the jobs, e.g. [cc-slurm](https://github.com/khanlab/cc-slurm)
  - Container dependencies downloaded already to a --singularity-prefix folder (note: default is `/project/6050199/akhanf/singularity/snakemake_containers/`)
@@ -35,6 +35,8 @@ writing output to a temp directory (e.g. $SLURM_TMPDIR) and copying the final ou
 
 ## Notes 
  - The workflow only includes sessions where both dwi and t1 exist (by taking an intersection of those lists)
+ - Only runs that completed successfully will have any outputs retained. For those that failed you will need to inspect the slurm logs.
+ - The `work` subfolder will not be retained at all, if you need this, you can add it to the `root_folders:` list in the config
  - It is generally OK to use immediate-submit for this workflow, since it does not have multiple layers of dependent rules. Furthermore, the `--notemp` option does not get propagated to the snakemake call used to run the app on each subject/session.
  - With the latest version of Snakemake, the `--slurm` option can be used to submit jobs instead of `--profile cc-slurm`. This will work for jobs without GPUs, however, some additional logic will need to be added to this workflow to support this option with GPUs (coming soon).
 
