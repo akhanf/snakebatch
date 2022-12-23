@@ -1,0 +1,96 @@
+#---- begin snakebids boilerplate ----------------------------------------------
+
+import snakebids
+from snakebids import bids
+import os
+
+configfile: workflow.source_path('../config/snakebids.yml')
+
+#set pybids_database_dir to bids/.pybids
+config["pybids_db_dir"]=os.path.join(config["bids_dir"],'.pybids')
+
+
+# Get input wildcards
+inputs = snakebids.generate_inputs(
+    bids_dir=config["bids_dir"],
+    pybids_inputs=config["pybids_inputs"],
+    pybids_database_dir=config.get("pybids_db_dir"),
+    pybids_reset_database=config.get("pybids_db_reset"),
+    derivatives=config.get("derivatives", None),
+    participant_label=config.get("participant_label", None),
+    exclude_participant_label=config.get("exclude_participant_label", None),
+    use_bids_inputs=True,
+)
+
+
+subj_set_intersection = None
+subj_zip_list = None
+
+for bidsinput in config["pybids_inputs"].keys():
+   zipl = inputs.input_zip_lists[bidsinput]
+   if "session" in zipl:
+       # has session, so we have to zip, then use set to remove duplicates
+       subj_set = set(zip(zipl["subject"], zipl["session"]))
+   else:
+       # does not have session, so we can remove duplicates easily by using set
+       subj_set = set(zipl["subject"])
+
+   subj_set_intersection = (
+       subj_set
+       if subj_set_intersection == None
+       else subj_set.intersection(subj_set_intersection)
+   )
+
+if "session" in zipl:
+   (subzip, seszip) = zip(*list(subj_set_intersection))  # zip it up again
+   subj_zip_list = {
+       "subject": subzip,
+       "session": seszip,
+   }  # create the new subj_zip_list
+
+else:
+   subj_zip_list = {"subject": list(subj_set_intersection)}
+
+
+
+
+#this adds constraints to the bids naming
+wildcard_constraints:  **snakebids.get_wildcard_constraints(config['pybids_inputs'])
+
+#---- end snakebids boilerplate ------------------------------------------------
+
+rule all:
+    input:
+        expand('snakedwi/sub-{subject}/ses-{session}',zip,**subj_zip_list),
+
+def get_output_files_folders():
+    """ This function is used to select what files to retain, since the 
+    app is run on /tmp, and only files listed here will be copied over"""
+
+    output_files_folders=[]
+    output_files_folders.append(directory('snakedwi/sub-{subject}/ses-{session}'))
+    return output_files_folders
+
+rule snakedwi:
+    input:
+        runscript=config['runscript']['snakedwi'],
+        bids=config['bids_dir'],
+    params:
+        snakedwi_opts=lambda wildcards: config['opts']['snakedwi'],
+        retain_outputs_from_tmp=lambda wildcards, resources, output: ' && '.join([f'cp -Rv {resources.tmpdir}/{out} {out}' for out in output])
+    output:
+        get_output_files_folders()
+    shadow: 'minimal'
+    threads: config['resources']['cores']
+    resources: 
+        tmpdir='$SLURM_TMPDIR',
+        mem_mb=config['resources']['mem_mb'],
+        time=config['resources']['time'],
+        gpus=1
+    shell: 
+        '{input.runscript} {input.bids} {resources.tmpdir} participant --participant_label {wildcards.subject} '
+        '--filter-dwi session={wildcards.session} '
+        '-p --cores {threads}  --pybidsdb-dir {input.bids}/.pybids {params.snakedwi_opts} --use-singularity --singularity-prefix $SNAKEMAKE_SINGULARITY_DIR && '
+        '{params.retain_outputs_from_tmp} '
+
+
