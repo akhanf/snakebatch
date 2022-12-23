@@ -69,6 +69,9 @@ def get_output_files_folders():
 
     output_files_folders=[]
     output_files_folders.append(directory('snakedwi/sub-{subject}/ses-{session}'))
+#    output_files_folders.append(directory('logs/sub-{subject}/ses-{session}'))
+#    output_files_folders.append(directory('qc/sub-{subject}/ses-{session}'))
+#    output_files_folders.append(directory('work/sub-{subject}/ses-{session}'))
     return output_files_folders
 
 rule snakedwi:

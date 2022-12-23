@@ -100,8 +100,8 @@ opts:
 
   
 resources:
-  cores: 32
-  mem_mb: 128000
-  time: 180 
+  cores: 16
+  mem_mb: 64000
+  time: 60 
 
 
