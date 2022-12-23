@@ -89,18 +89,30 @@ def get_output_files_folders():
 
     return output_files_folders
 
+
+rule get_app:
+    params:
+        url=config['url'],
+        tag=config['tag'],
+        repo=f"repo_{config['name']}_{config['tag']}",
+    output:
+        repo=directory("repo_{config['name']}_{config['tag']}"),
+    shell:
+        'git clone {params.url} -b {params.tag} {params.repo}'
+
+
 rule run_app:
     input:
-        runscript=config['runscript'],
+        repo="repo_{config['name']}_{config['tag']}",
         bids=config['bids_dir'],
     params:
+        runscript=f"repo_{config['name']}_{config['tag']}/{config['runscript']}",
         app_opts=lambda wildcards: config['opts'],
         singularity_prefix=config['singularity_prefix'],
         retain_outputs_from_tmp=get_cmd_retain_outputs_from_tmp,
         session_filter=get_session_filter
     output:
         get_output_files_folders()
-    shadow: 'minimal'
     threads: config['resources']['cores']
     resources: 
         tmpdir=lambda wildcards: bids(root=config['resources']['tmpdir'],**subj_wildcards,include_subject_dir=False,include_session_dir=False).format(**wildcards),
@@ -108,7 +120,7 @@ rule run_app:
         time=config['resources']['time'],
         gpus=1
     shell: 
-        '{input.runscript} {input.bids} {resources.tmpdir} participant '
+        '{params.runscript} {input.bids} {resources.tmpdir} participant '
         '--participant_label {wildcards.subject} {params.session_filter} '
         '-p --cores {threads} --pybidsdb-dir {input.bids}/.pybids {params.app_opts} '
         '--use-singularity --singularity-prefix {params.singularity_prefix} && '
