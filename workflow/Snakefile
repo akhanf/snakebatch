@@ -2,12 +2,12 @@
 
 import snakebids
 from snakebids import bids
-import os
+from pathlib import Path
 
 configfile: workflow.source_path('../config/snakebids.yml')
 
 #set pybids_database_dir to bids/.pybids
-config["pybids_db_dir"]=os.path.join(config["bids_dir"],'.pybids')
+config["pybids_db_dir"]=Path(config["bids_dir"]) / Path('.pybids')
 
 
 # Get input wildcards
@@ -52,48 +52,66 @@ else:
    subj_zip_list = {"subject": list(subj_set_intersection)}
 
 
-
+subj_wildcards=inputs.subj_wildcards
 
 #this adds constraints to the bids naming
 wildcard_constraints:  **snakebids.get_wildcard_constraints(config['pybids_inputs'])
 
 #---- end snakebids boilerplate ------------------------------------------------
 
+def get_targets():
+    """ final output files are of the form: {root_folder}/sub-{subject}/ses-{session} """
+    targets=list()
+    for root in config['root_folders']:
+        targets.extend(expand(Path(bids(root=root,**subj_wildcards)).parent,zip,**subj_zip_list))
+    return targets
+
 rule all:
-    input:
-        expand('snakedwi/sub-{subject}/ses-{session}',zip,**subj_zip_list),
+    input: 
+        get_targets()
+
+def get_cmd_retain_outputs_from_tmp(wildcards,resources,output):
+    return ' && '.join([f'cp -Rv {resources.tmpdir}/{out} {out}' for out in output]),
+
+def get_session_filter(wildcards):
+    if 'session' in wildcards._names:
+        return f"--filter-{config['input_to_filter']} session={wildcards.session}"
+    else:
+        return ''
 
 def get_output_files_folders():
     """ This function is used to select what files to retain, since the 
     app is run on /tmp, and only files listed here will be copied over"""
 
     output_files_folders=[]
-    output_files_folders.append(directory('snakedwi/sub-{subject}/ses-{session}'))
-#    output_files_folders.append(directory('logs/sub-{subject}/ses-{session}'))
-#    output_files_folders.append(directory('qc/sub-{subject}/ses-{session}'))
-#    output_files_folders.append(directory('work/sub-{subject}/ses-{session}'))
+    for root_folder in config['root_folders']:
+        output_files_folders.append(directory(Path(bids(root=root_folder,**subj_wildcards)).parent))
+
     return output_files_folders
 
-rule snakedwi:
+rule run_app:
     input:
-        runscript=config['runscript']['snakedwi'],
+        runscript=config['runscript'],
         bids=config['bids_dir'],
     params:
-        snakedwi_opts=lambda wildcards: config['opts']['snakedwi'],
-        retain_outputs_from_tmp=lambda wildcards, resources, output: ' && '.join([f'cp -Rv {resources.tmpdir}/{out} {out}' for out in output])
+        app_opts=lambda wildcards: config['opts'],
+        singularity_prefix=config['singularity_prefix'],
+        retain_outputs_from_tmp=get_cmd_retain_outputs_from_tmp,
+        session_filter=get_session_filter
     output:
         get_output_files_folders()
     shadow: 'minimal'
     threads: config['resources']['cores']
     resources: 
-        tmpdir='$SLURM_TMPDIR',
+        tmpdir=lambda wildcards: bids(root=config['resources']['tmpdir'],**subj_wildcards,include_subject_dir=False,include_session_dir=False).format(**wildcards),
         mem_mb=config['resources']['mem_mb'],
         time=config['resources']['time'],
         gpus=1
     shell: 
-        '{input.runscript} {input.bids} {resources.tmpdir} participant --participant_label {wildcards.subject} '
-        '--filter-dwi session={wildcards.session} '
-        '-p --cores {threads}  --pybidsdb-dir {input.bids}/.pybids {params.snakedwi_opts} --use-singularity --singularity-prefix $SNAKEMAKE_SINGULARITY_DIR && '
+        '{input.runscript} {input.bids} {resources.tmpdir} participant '
+        '--participant_label {wildcards.subject} {params.session_filter} '
+        '-p --cores {threads} --pybidsdb-dir {input.bids}/.pybids {params.app_opts} '
+        '--use-singularity --singularity-prefix {params.singularity_prefix} && '
         '{params.retain_outputs_from_tmp} '
 
 
