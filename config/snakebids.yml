@@ -117,5 +117,6 @@ resources:
   mem_mb: 32000
   time: 360 
   tmpdir: '$SLURM_TMPDIR'
+  gpus: 0
 
 
