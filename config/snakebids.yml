@@ -99,7 +99,7 @@ singularity_prefix: '/project/6050199/akhanf/singularity/snakemake_containers'
 
 name: 'snakedwi'
 url: 'http://github.com/akhanf/snakedwi'
-tag: 'v0.1.0-alpha'
+tag: 'v0.2.0-alpha'
 
 
 root_folders:
@@ -110,12 +110,13 @@ input_to_filter: dwi #e.g. for --filter-dwi
 
 runscript: 'snakedwi/run.py' #relative to the app repo
 
-opts: '--no-topup --use-bedpost-gpu --use-eddy-gpu' #these options are for ppmi
+opts: '' #these options are for ppmi
 
 resources:
-  cores: 16
-  mem_mb: 64000
-  time: 60 
+  cores: 8
+  mem_mb: 32000
+  time: 360 
   tmpdir: '$SLURM_TMPDIR'
+  gpus: 0
 
 
