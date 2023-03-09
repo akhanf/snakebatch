@@ -120,7 +120,7 @@ rule run_app:
         tmpdir=lambda wildcards: bids(root=config['resources']['tmpdir'],**subj_wildcards,include_subject_dir=False,include_session_dir=False).format(**wildcards),
         mem_mb=config['resources']['mem_mb'],
         time=config['resources']['time'],
-        gpus=1
+        gpus=config['resources']['gpus']
     shell: 
         '{params.runscript} {input.bids} {resources.tmpdir} participant '
         '--participant_label {wildcards.subject} {params.session_filter} '
