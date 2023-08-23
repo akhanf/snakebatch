@@ -138,7 +138,7 @@ sb_apps:
 
   hippunfold:
     snakebids: True
-    container: '/project/6050199/akhanf/singularity/bids-apps/khanlab_hippunfold_v1.3.3.sif'
+    container: 'docker://khanlab/hippunfold:v1.3.3.sif'
     opts: ''
     root_folders:
       - 'hippunfold'
@@ -154,7 +154,8 @@ sb_apps:
 
   fmriprep:
     container: '/project/6050199/akhanf/singularity/bids-apps/nipreps_fmriprep_23.1.0.sif'
-    opts: ''
+    singularity_opts: '-e'
+    opts: '--anat-only'
     root_folders:
       - ''
     input_to_filter: t1 #e.g. for --filter-dwi

@@ -112,7 +112,7 @@ rule get_snakebids_app:
 
 def get_sb_container(app):
     if 'container' in config["sb_apps"][app].keys():
-        return {'container':config["sb_apps"][app]['container']}
+        return {'container': f"containers/{app}.sif" }
     else:
         return {}
  
@@ -134,10 +134,13 @@ def get_run_cmd(wildcards, input):
     if 'url' in config["sb_apps"][wildcards.app].keys():
         return f"repo_{wildcards.app}/{config['sb_apps'][wildcards.app]['runscript']}",
     elif 'container' in config["sb_apps"][wildcards.app].keys():
+
+        singularity_opts=config["sb_apps"][wildcards.app].get("singularity_opts","")
+            
         if 'runscript' in config["sb_apps"][wildcards.app].keys():
-            return f"singularity exec {input.container} {input.runscript}"
+            return f"singularity exec {singularity_opts} {input.container} {input.runscript}"
         else:
-            return f'singularity run {input.container}'
+            return f'singularity run {singularity_opts} {input.container}'
     else:
         return ""
 
@@ -149,6 +152,14 @@ def get_snakebids_opts(wildcards,input,threads):
         return ""
 
 for app_name in config['sb_apps'].keys():
+
+    if 'container' in config['sb_apps'][app_name].keys():
+        rule: 
+            name: f"get_container_{app_name}"
+            container: config["sb_apps"][app_name]['container']
+            output: f"containers/{app_name}.sif"
+            shell:
+                "ln -sv $SINGULARITY_CONTAINER {output}"
 
     rule:
         name: app_name
@@ -177,10 +188,5 @@ for app_name in config['sb_apps'].keys():
             '{params.snakebids_opts} '
             '{params.app_opts} '
             '{params.singularity_opts} && '
-            '{params.retain_outputs_from_tmp} '
-            '{params.run_cmd} {input.bids} {resources.tmpdir} participant '
-            '--participant_label {wildcards.subject} '
-            '{params.app_opts} && '
             '{params.retain_outputs_from_tmp}'
-
-
+        
