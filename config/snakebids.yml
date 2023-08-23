@@ -1,8 +1,7 @@
 datasets:
-  mydataset: '/scratch/akhanf/3_processing/preproc-smk-new/bids_test'
-  anotherdataset: '/scratch/akhanf/3_processing/preproc-smk-new/another_dataset'
+  mydataset: '/scratch/akhanf/3_processing/preproc-smk-new/test_data/bids_test'
+  anotherdataset: '/scratch/akhanf/3_processing/preproc-smk-new/test_data/another_dataset'
 
-bids_dir: '/scratch/akhanf/3_processing/preproc-smk-new/bids_test'
 output_dir: 'results'
 
 #enable printing debug statements during parsing -- disable if generating dag visualization

@@ -16,7 +16,7 @@ wildcard_constraints:  **snakebids.get_wildcard_constraints(config['pybids_input
 
 inputs = dict()
 subj_wildcards = dict()
-subj_zip_list = dict()
+bids_intersect = dict()
 
 for dataset in config['datasets'].keys():
 
@@ -29,50 +29,34 @@ for dataset in config['datasets'].keys():
         derivatives=config.get("derivatives", None),
         participant_label=config.get("participant_label", None),
         exclude_participant_label=config.get("exclude_participant_label", None),
-        use_bids_inputs=True,
     )
 
-
-    subj_set_intersection = None
-    subj_zip_list[dataset] = None
-
-    for bidsinput in config["pybids_inputs"].keys():
-       zipl = inputs[dataset].input_zip_lists[bidsinput]
-       if "session" in zipl:
-           # has session, so we have to zip, then use set to remove duplicates
-           subj_set = set(zip(zipl["subject"], zipl["session"]))
-       else:
-           # does not have session, so we can remove duplicates easily by using set
-           subj_set = set(zipl["subject"])
-
-       subj_set_intersection = (
-           subj_set
-           if subj_set_intersection == None
-           else subj_set.intersection(subj_set_intersection)
-       )
-
-    if "session" in zipl:
-       (subzip, seszip) = zip(*list(subj_set_intersection))  # zip it up again
-       subj_zip_list[dataset] = {
-           "subject": subzip,
-           "session": seszip,
-       }  # create the new subj_zip_list
-
-    else:
-       subj_zip_list[dataset] = {"subject": list(subj_set_intersection)}
-
-
     subj_wildcards[dataset] = inputs[dataset].subj_wildcards
+    
+    comps = list(inputs[dataset].keys())
+    bids_intersect[dataset] = inputs[dataset][comps[0]]
 
-#---- end snakebids boilerplate ------------------------------------------------
+    for c in comps[1:]:
+        bids_intersect[dataset] = bids_intersect[dataset].filter(**inputs[dataset][c].entities)
+
+ 
+
+
 
 def get_targets():
-    """ final output files are of the form: {root_folder}/sub-{subject}/ses-{session} """
+    """ final output files are of the form: {dataset}/{app}/{root_folder}/sub-{subject}/ses-{session} """
     targets=list()
     for dataset in config['datasets'].keys():
         for app in config['apps'].keys():
             for root in config['apps'][app]['root_folders']:
-                targets.extend(expand(Path(dataset)/Path(app)/Path(bids(root=root,**subj_wildcards[dataset])).parent,zip,**subj_zip_list[dataset]))
+                targets.extend(
+                            bids_intersect[dataset].expand(
+                                    Path(dataset)/Path(app)/Path(
+                                        bids(
+                                        root=root,
+                                        **subj_wildcards[dataset])).parent)
+                                        )
+                                        
     return targets
 
 
@@ -173,7 +157,7 @@ for dataset in config['datasets'].keys():
         rule:
             name: f"{dataset}_{app}"
             input:
-                bids=config['bids_dir'],
+                bids=lambda wildcards: config["datasets"][wildcards.dataset],
                 **get_sb_repo(app),
                 **get_sb_container(app),
             params:
@@ -191,6 +175,7 @@ for dataset in config['datasets'].keys():
                 mem_mb=lambda wildcards: config['apps'][wildcards.app]['resources']['mem_mb'],
                 time=lambda wildcards: config['apps'][wildcards.app]['resources']['time'],
                 gpus=lambda wildcards: config['apps'][wildcards.app]['resources']['gpus']
+            shadow: 'minimal' #to avoid polluting working dir
             shell: 
                 '{params.run_cmd} {input.bids} {resources.tmpdir} participant '
                 '--participant_label {wildcards.subject} {params.session_filter} '
