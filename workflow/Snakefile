@@ -85,6 +85,7 @@ rule get_snakebids_app:
         tag=lambda wildcards: config['apps'][wildcards.app]['tag'],
     output:
         repo=directory("repo_{app}"),
+    localrule: True
     shell:
         'git clone {params.url} -b {params.tag} {output.repo}'
 
@@ -149,6 +150,7 @@ for dataset in config['datasets'].keys():
                 name: f"get_container_{app}"
                 container: config["apps"][app]['container']
                 output: f"containers/{app}.sif"
+                localrule: True
                 shell:
                     "ln -sv $SINGULARITY_CONTAINER {output}"
 
@@ -171,7 +173,7 @@ for dataset in config['datasets'].keys():
             resources: 
                 tmpdir=lambda wildcards: bids(root=config['apps'][wildcards.app]['resources']['tmpdir'],**subj_wildcards[wildcards.dataset],include_subject_dir=False,include_session_dir=False).format(**wildcards),
                 mem_mb=lambda wildcards: config['apps'][wildcards.app]['resources']['mem_mb'],
-                time=lambda wildcards: config['apps'][wildcards.app]['resources']['time'],
+                runtime=lambda wildcards: config['apps'][wildcards.app]['resources']['runtime'],
                 gpus=lambda wildcards: config['apps'][wildcards.app]['resources']['gpus']
             shadow: 'minimal' #to avoid polluting working dir
             shell: 

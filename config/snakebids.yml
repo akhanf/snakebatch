@@ -113,7 +113,7 @@ apps:
     resources:
       cores: 8
       mem_mb: 32000
-      time: 360 
+      runtime: 360 
       tmpdir: '$SLURM_TMPDIR'
       gpus: 0
 
@@ -133,7 +133,7 @@ apps:
     resources:
       cores: 8
       mem_mb: 32000
-      time: 360 
+      runtime: 360 
       tmpdir: '$SLURM_TMPDIR'
       gpus: 0
 
@@ -149,7 +149,7 @@ apps:
     resources:
       cores: 8
       mem_mb: 32000
-      time: 360 
+      runtime: 360 
       tmpdir: '$SLURM_TMPDIR'
       gpus: 0
 
@@ -164,7 +164,7 @@ apps:
     resources:
       cores: 8
       mem_mb: 32000
-      time: 360 
+      runtime: 360 
       tmpdir: '$SLURM_TMPDIR'
       gpus: 0
 
