@@ -7,15 +7,16 @@ from pathlib import Path
 configfile: workflow.source_path('../config/snakebids.yml')
 
 #set pybids_database_dir to bids/.pybids
-config["pybids_db_dir"]=Path(config["bids_dir"]) / Path('.pybids')
+config["pybids_db_dir"]=None
+#config["pybids_db_dir"]=Path(config["bids_dir"]) / Path('.pybids')
 
 
 # Get input wildcards
 inputs = snakebids.generate_inputs(
     bids_dir=config["bids_dir"],
     pybids_inputs=config["pybids_inputs"],
-    pybids_database_dir=config.get("pybids_db_dir"),
-    pybids_reset_database=config.get("pybids_db_reset"),
+    pybidsdb_dir=config.get("pybids_db_dir"),
+    pybidsdb_reset=config.get("pybids_db_reset"),
     derivatives=config.get("derivatives", None),
     participant_label=config.get("participant_label", None),
     exclude_participant_label=config.get("exclude_participant_label", None),
@@ -62,8 +63,9 @@ wildcard_constraints:  **snakebids.get_wildcard_constraints(config['pybids_input
 def get_targets():
     """ final output files are of the form: {root_folder}/sub-{subject}/ses-{session} """
     targets=list()
-    for root in config['root_folders']:
-        targets.extend(expand(Path(bids(root=root,**subj_wildcards)).parent,zip,**subj_zip_list))
+    for app in config['sb_apps'].keys():
+        for root in config['sb_apps'][app]['root_folders']:
+            targets.extend(expand(Path(app)/Path(bids(root=root,**subj_wildcards)).parent,zip,**subj_zip_list))
     return targets
 
 localrules: get_app
@@ -73,59 +75,109 @@ rule all:
         get_targets()
 
 def get_cmd_retain_outputs_from_tmp(wildcards,resources,output):
-    return ' && '.join([f'cp -Rv {resources.tmpdir}/{out} {out}' for out in output]),
+    output_files_folders=[]
+    for root_folder in config['sb_apps'][wildcards.app]['root_folders']:
+        output_files_folders.append(directory(Path(bids(root=root_folder,**subj_wildcards)).parent))
+        
+    return ' && '.join([f'cp -Rv {resources.tmpdir}/{out} {wildcards.app}/{out}' for out in output_files_folders]),
 
+   
+    
 def get_session_filter(wildcards):
+    input_to_filter = config['sb_apps'][wildcards.app]['input_to_filter']
     if 'session' in wildcards._names:
-        return f"--filter-{config['input_to_filter']} session={wildcards.session}"
+        return f"--filter-{input_to_filter} session={wildcards.session}"
     else:
         return ''
 
-def get_output_files_folders():
+def get_output_files_folders(app):
     """ This function is used to select what files to retain, since the 
     app is run on /tmp, and only files listed here will be copied over"""
 
     output_files_folders=[]
-    for root_folder in config['root_folders']:
-        output_files_folders.append(directory(Path(bids(root=root_folder,**subj_wildcards)).parent))
+    for root_folder in config['sb_apps'][app]['root_folders']:
+        output_files_folders.append(directory(Path(f'{{app,{app_name}}}')/Path(bids(root=root_folder,**subj_wildcards)).parent))
 
     return output_files_folders
 
 
-rule get_app:
+rule get_snakebids_app:
     params:
-        url=config['url'],
-        tag=config['tag'],
-        repo=f"repo_{config['name']}_{config['tag']}",
+        url=lambda wildcards: config['sb_apps'][wildcards.app]['url'],
+        tag=lambda wildcards: config['sb_apps'][wildcards.app]['tag'],
     output:
-        repo=directory(f"repo_{config['name']}_{config['tag']}"),
+        repo=directory("repo_{app}"),
     shell:
-        'git clone {params.url} -b {params.tag} {params.repo}'
+        'git clone {params.url} -b {params.tag} {output.repo}'
+
+def get_sb_container(app):
+    if 'container' in config["sb_apps"][app].keys():
+        return {'container':config["sb_apps"][app]['container']}
+    else:
+        return {}
+ 
+def get_sb_repo(app):
+    if 'url' in config["sb_apps"][app].keys():
+        return {'repo': 'repo_{app}'}
+    else:
+        return {}
+        
+def get_sb_singularity_opts(wildcards):
+    if 'url' in config["sb_apps"][wildcards.app].keys():
+        return f"--use-singularity --singularity-prefix {config['singularity_prefix']}"
+    else:
+        return ""
 
 
-rule run_app:
-    input:
-        repo=f"repo_{config['name']}_{config['tag']}",
-        bids=config['bids_dir'],
-    params:
-        runscript=f"repo_{config['name']}_{config['tag']}/{config['runscript']}",
-        app_opts=lambda wildcards: config['opts'],
-        singularity_prefix=config['singularity_prefix'],
-        retain_outputs_from_tmp=get_cmd_retain_outputs_from_tmp,
-        session_filter=get_session_filter
-    output:
-        get_output_files_folders()
-    threads: config['resources']['cores']
-    resources: 
-        tmpdir=lambda wildcards: bids(root=config['resources']['tmpdir'],**subj_wildcards,include_subject_dir=False,include_session_dir=False).format(**wildcards),
-        mem_mb=config['resources']['mem_mb'],
-        time=config['resources']['time'],
-        gpus=config['resources']['gpus']
-    shell: 
-        '{params.runscript} {input.bids} {resources.tmpdir} participant '
-        '--participant_label {wildcards.subject} {params.session_filter} '
-        '-p --cores {threads} --pybidsdb-dir {input.bids}/.pybids {params.app_opts} '
-        '--use-singularity --singularity-prefix {params.singularity_prefix} && '
-        '{params.retain_outputs_from_tmp} '
+
+def get_run_cmd(wildcards, input):
+    if 'url' in config["sb_apps"][wildcards.app].keys():
+        return f"repo_{wildcards.app}/{config['sb_apps'][wildcards.app]['runscript']}",
+    elif 'container' in config["sb_apps"][wildcards.app].keys():
+        return f'singularity exec {input.container}'
+    else:
+        return ""
+
+
+def get_snakebids_opts(wildcards,input,threads):
+    if config["sb_apps"][wildcards.app].get('snakebids',False):
+        return f"-p --cores {threads} --pybidsdb-dir {input.bids}/.pybids"
+    else:
+        return ""
+
+for app_name in config['sb_apps'].keys():
+
+    rule:
+        name: app_name
+        input:
+            bids=config['bids_dir'],
+            **get_sb_repo(app_name),
+            **get_sb_container(app_name),
+        params:
+            run_cmd=get_run_cmd,
+            app_opts=lambda wildcards: config["sb_apps"][wildcards.app]['opts'],
+            singularity_opts=get_sb_singularity_opts,
+            retain_outputs_from_tmp=get_cmd_retain_outputs_from_tmp,
+            session_filter=get_session_filter,
+            snakebids_opts=get_snakebids_opts
+        output:
+            get_output_files_folders(app_name)
+        threads: lambda wildcards: config['sb_apps'][wildcards.app]['resources']['cores']
+        resources: 
+            tmpdir=lambda wildcards: bids(root=config['sb_apps'][wildcards.app]['resources']['tmpdir'],**subj_wildcards,include_subject_dir=False,include_session_dir=False).format(**wildcards),
+            mem_mb=lambda wildcards: config['sb_apps'][wildcards.app]['resources']['mem_mb'],
+            time=lambda wildcards: config['sb_apps'][wildcards.app]['resources']['time'],
+            gpus=lambda wildcards: config['sb_apps'][wildcards.app]['resources']['gpus']
+        shell: 
+            '{params.run_cmd} {input.bids} {resources.tmpdir} participant '
+            '--participant_label {wildcards.subject} {params.session_filter} '
+            '{params.snakebids_opts} '
+            '{params.app_opts} '
+            '{params.singularity_opts} && '
+            '{params.retain_outputs_from_tmp} '
+            '{params.run_cmd} {input.bids} {resources.tmpdir} participant '
+            '--participant_label {wildcards.subject} '
+            '{params.app_opts} && '
+            '{params.retain_outputs_from_tmp}'
 
 

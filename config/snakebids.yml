@@ -1,5 +1,5 @@
-bids_dir: '/path/to/bids_dir'
-output_dir: '/path/to/output_dir'
+bids_dir: '/scratch/akhanf/3_processing/preproc-smk-new/bids_test'
+output_dir: 'results'
 
 #enable printing debug statements during parsing -- disable if generating dag visualization
 debug: False
@@ -97,26 +97,72 @@ singularity_prefix: '/project/6050199/akhanf/singularity/snakemake_containers'
 
 # app options below:
 
-name: 'snakedwi'
-url: 'http://github.com/akhanf/snakedwi'
-tag: 'v0.2.0-alpha'
+sb_apps:
+  snakedwi:
+    snakebids: True
+    url: 'http://github.com/akhanf/snakedwi'
+    tag: 'v0.2.0-alpha'
+    runscript: 'snakedwi/run.py' #relative to the app repo
+    opts: ''
+    root_folders:
+      - 'snakedwi'
+      - 'work'
+    input_to_filter: dwi #e.g. for --filter-dwi
+    resources:
+      cores: 8
+      mem_mb: 32000
+      time: 360 
+      tmpdir: '$SLURM_TMPDIR'
+      gpus: 0
 
 
-root_folders:
-  - snakedwi
+  snakeanat:
+    snakebids: True
+    url: 'http://github.com/pvandyken/snakeanat'
+    tag: 'main'
+    runscript: 'snakeanat/run.py' #relative to the app repo
+    opts: ''
+    root_folders:
+      - ''
+      - 'qc'
+      - 'sourcedata/fastsurfer'
+      - 'sourcedata/ciftify'
+    input_to_filter: t1 #e.g. for --filter-dwi
+    resources:
+      cores: 8
+      mem_mb: 32000
+      time: 360 
+      tmpdir: '$SLURM_TMPDIR'
+      gpus: 0
 
-input_to_filter: dwi #e.g. for --filter-dwi
+
+  hippunfold:
+    snakebids: True
+    container: '/project/6050199/akhanf/singularity/bids-apps/khanlab_hippunfold_v1.3.3.sif'
+    opts: ''
+    root_folders:
+      - 'hippunfold'
+      - 'work'
+    input_to_filter: t1 #e.g. for --filter-dwi
+    resources:
+      cores: 8
+      mem_mb: 32000
+      time: 360 
+      tmpdir: '$SLURM_TMPDIR'
+      gpus: 0
 
 
-runscript: 'snakedwi/run.py' #relative to the app repo
-
-opts: '' #these options are for ppmi
-
-resources:
-  cores: 8
-  mem_mb: 32000
-  time: 360 
-  tmpdir: '$SLURM_TMPDIR'
-  gpus: 0
+  fmriprep:
+    container: '/project/6050199/akhanf/singularity/bids-apps/nipreps_fmriprep_23.1.0.sif'
+    opts: ''
+    root_folders:
+      - ''
+    input_to_filter: t1 #e.g. for --filter-dwi
+    resources:
+      cores: 8
+      mem_mb: 32000
+      time: 360 
+      tmpdir: '$SLURM_TMPDIR'
+      gpus: 0
 
 
