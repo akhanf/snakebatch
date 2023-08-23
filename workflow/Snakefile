@@ -10,65 +10,71 @@ configfile: workflow.source_path('../config/snakebids.yml')
 config["pybids_db_dir"]=None
 #config["pybids_db_dir"]=Path(config["bids_dir"]) / Path('.pybids')
 
-
-# Get input wildcards
-inputs = snakebids.generate_inputs(
-    bids_dir=config["bids_dir"],
-    pybids_inputs=config["pybids_inputs"],
-    pybidsdb_dir=config.get("pybids_db_dir"),
-    pybidsdb_reset=config.get("pybids_db_reset"),
-    derivatives=config.get("derivatives", None),
-    participant_label=config.get("participant_label", None),
-    exclude_participant_label=config.get("exclude_participant_label", None),
-    use_bids_inputs=True,
-)
-
-
-subj_set_intersection = None
-subj_zip_list = None
-
-for bidsinput in config["pybids_inputs"].keys():
-   zipl = inputs.input_zip_lists[bidsinput]
-   if "session" in zipl:
-       # has session, so we have to zip, then use set to remove duplicates
-       subj_set = set(zip(zipl["subject"], zipl["session"]))
-   else:
-       # does not have session, so we can remove duplicates easily by using set
-       subj_set = set(zipl["subject"])
-
-   subj_set_intersection = (
-       subj_set
-       if subj_set_intersection == None
-       else subj_set.intersection(subj_set_intersection)
-   )
-
-if "session" in zipl:
-   (subzip, seszip) = zip(*list(subj_set_intersection))  # zip it up again
-   subj_zip_list = {
-       "subject": subzip,
-       "session": seszip,
-   }  # create the new subj_zip_list
-
-else:
-   subj_zip_list = {"subject": list(subj_set_intersection)}
-
-
-subj_wildcards=inputs.subj_wildcards
-
 #this adds constraints to the bids naming
 wildcard_constraints:  **snakebids.get_wildcard_constraints(config['pybids_inputs'])
+
+
+inputs = dict()
+subj_wildcards = dict()
+subj_zip_list = dict()
+
+for dataset in config['datasets'].keys():
+
+    # Get input wildcards
+    inputs[dataset] = snakebids.generate_inputs(
+        bids_dir=config["datasets"][dataset],
+        pybids_inputs=config["pybids_inputs"],
+        pybidsdb_dir=config.get("pybids_db_dir"),
+        pybidsdb_reset=config.get("pybids_db_reset"),
+        derivatives=config.get("derivatives", None),
+        participant_label=config.get("participant_label", None),
+        exclude_participant_label=config.get("exclude_participant_label", None),
+        use_bids_inputs=True,
+    )
+
+
+    subj_set_intersection = None
+    subj_zip_list[dataset] = None
+
+    for bidsinput in config["pybids_inputs"].keys():
+       zipl = inputs[dataset].input_zip_lists[bidsinput]
+       if "session" in zipl:
+           # has session, so we have to zip, then use set to remove duplicates
+           subj_set = set(zip(zipl["subject"], zipl["session"]))
+       else:
+           # does not have session, so we can remove duplicates easily by using set
+           subj_set = set(zipl["subject"])
+
+       subj_set_intersection = (
+           subj_set
+           if subj_set_intersection == None
+           else subj_set.intersection(subj_set_intersection)
+       )
+
+    if "session" in zipl:
+       (subzip, seszip) = zip(*list(subj_set_intersection))  # zip it up again
+       subj_zip_list[dataset] = {
+           "subject": subzip,
+           "session": seszip,
+       }  # create the new subj_zip_list
+
+    else:
+       subj_zip_list[dataset] = {"subject": list(subj_set_intersection)}
+
+
+    subj_wildcards[dataset] = inputs[dataset].subj_wildcards
 
 #---- end snakebids boilerplate ------------------------------------------------
 
 def get_targets():
     """ final output files are of the form: {root_folder}/sub-{subject}/ses-{session} """
     targets=list()
-    for app in config['apps'].keys():
-        for root in config['apps'][app]['root_folders']:
-            targets.extend(expand(Path(app)/Path(bids(root=root,**subj_wildcards)).parent,zip,**subj_zip_list))
+    for dataset in config['datasets'].keys():
+        for app in config['apps'].keys():
+            for root in config['apps'][app]['root_folders']:
+                targets.extend(expand(Path(dataset)/Path(app)/Path(bids(root=root,**subj_wildcards[dataset])).parent,zip,**subj_zip_list[dataset]))
     return targets
 
-localrules: get_app
 
 rule all:
     input: 
@@ -77,9 +83,9 @@ rule all:
 def get_cmd_retain_outputs_from_tmp(wildcards,resources,output):
     output_files_folders=[]
     for root_folder in config['apps'][wildcards.app]['root_folders']:
-        output_files_folders.append(directory(Path(bids(root=root_folder,**subj_wildcards)).parent))
+        output_files_folders.append(directory(Path(bids(root=root_folder,**subj_wildcards[wildcards.dataset])).parent))
         
-    return ' && '.join([f'cp -Rv {resources.tmpdir}/{out} {wildcards.app}/{out}' for out in output_files_folders]),
+    return ' && '.join([f'cp -Rv {resources.tmpdir}/{out} {wildcards.dataset}/{wildcards.app}/{out}' for out in output_files_folders]),
 
    
     
@@ -89,16 +95,6 @@ def get_session_filter(wildcards):
         return f"--filter-{input_to_filter} session={wildcards.session}"
     else:
         return ''
-
-def get_output_files_folders(app):
-    """ This function is used to select what files to retain, since the 
-    app is run on /tmp, and only files listed here will be copied over"""
-
-    output_files_folders=[]
-    for root_folder in config['apps'][app]['root_folders']:
-        output_files_folders.append(directory(Path(f'{{app,{app}}}')/Path(bids(root=root_folder,**subj_wildcards)).parent))
-
-    return output_files_folders
 
 
 rule get_snakebids_app:
@@ -151,42 +147,55 @@ def get_snakebids_opts(wildcards,input,threads):
     else:
         return ""
 
-for app in config['apps'].keys():
 
-    if 'container' in config['apps'][app].keys():
-        rule: 
-            name: f"get_container_{app}"
-            container: config["apps"][app]['container']
-            output: f"containers/{app}.sif"
-            shell:
-                "ln -sv $SINGULARITY_CONTAINER {output}"
+for dataset in config['datasets'].keys():
 
-    rule:
-        name: app
-        input:
-            bids=config['bids_dir'],
-            **get_sb_repo(app),
-            **get_sb_container(app),
-        params:
-            run_cmd=get_run_cmd,
-            app_opts=lambda wildcards: config["apps"][wildcards.app]['opts'],
-            singularity_opts=get_sb_singularity_opts,
-            retain_outputs_from_tmp=get_cmd_retain_outputs_from_tmp,
-            session_filter=get_session_filter,
-            snakebids_opts=get_snakebids_opts
-        output:
-            get_output_files_folders(app)
-        threads: lambda wildcards: config['apps'][wildcards.app]['resources']['cores']
-        resources: 
-            tmpdir=lambda wildcards: bids(root=config['apps'][wildcards.app]['resources']['tmpdir'],**subj_wildcards,include_subject_dir=False,include_session_dir=False).format(**wildcards),
-            mem_mb=lambda wildcards: config['apps'][wildcards.app]['resources']['mem_mb'],
-            time=lambda wildcards: config['apps'][wildcards.app]['resources']['time'],
-            gpus=lambda wildcards: config['apps'][wildcards.app]['resources']['gpus']
-        shell: 
-            '{params.run_cmd} {input.bids} {resources.tmpdir} participant '
-            '--participant_label {wildcards.subject} {params.session_filter} '
-            '{params.snakebids_opts} '
-            '{params.app_opts} '
-            '{params.singularity_opts} && '
-            '{params.retain_outputs_from_tmp}'
-        
+    def get_output_files_folders(app,dataset):
+        """ This function is used to select what files to retain, since the 
+        app is run on /tmp, and only files listed here will be copied over"""
+
+        output_files_folders=[]
+        for root_folder in config['apps'][app]['root_folders']:
+            output_files_folders.append(directory(Path(f'{{dataset,{dataset}}}/{{app,{app}}}')/Path(bids(root=root_folder,**subj_wildcards[dataset])).parent))
+        return output_files_folders
+
+
+    for app in config['apps'].keys():
+
+        if 'container' in config['apps'][app].keys():
+            rule: 
+                name: f"get_container_{app}"
+                container: config["apps"][app]['container']
+                output: f"containers/{app}.sif"
+                shell:
+                    "ln -sv $SINGULARITY_CONTAINER {output}"
+
+        rule:
+            name: f"{dataset}_{app}"
+            input:
+                bids=config['bids_dir'],
+                **get_sb_repo(app),
+                **get_sb_container(app),
+            params:
+                run_cmd=get_run_cmd,
+                app_opts=lambda wildcards: config["apps"][wildcards.app]['opts'],
+                singularity_opts=get_sb_singularity_opts,
+                retain_outputs_from_tmp=get_cmd_retain_outputs_from_tmp,
+                session_filter=get_session_filter,
+                snakebids_opts=get_snakebids_opts
+            output:
+                get_output_files_folders(app,dataset)
+            threads: lambda wildcards: config['apps'][wildcards.app]['resources']['cores']
+            resources: 
+                tmpdir=lambda wildcards: bids(root=config['apps'][wildcards.app]['resources']['tmpdir'],**subj_wildcards[wildcards.dataset],include_subject_dir=False,include_session_dir=False).format(**wildcards),
+                mem_mb=lambda wildcards: config['apps'][wildcards.app]['resources']['mem_mb'],
+                time=lambda wildcards: config['apps'][wildcards.app]['resources']['time'],
+                gpus=lambda wildcards: config['apps'][wildcards.app]['resources']['gpus']
+            shell: 
+                '{params.run_cmd} {input.bids} {resources.tmpdir} participant '
+                '--participant_label {wildcards.subject} {params.session_filter} '
+                '{params.snakebids_opts} '
+                '{params.app_opts} '
+                '{params.singularity_opts} && '
+                '{params.retain_outputs_from_tmp}'
+            

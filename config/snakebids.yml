@@ -1,3 +1,7 @@
+datasets:
+  mydataset: '/scratch/akhanf/3_processing/preproc-smk-new/bids_test'
+  anotherdataset: '/scratch/akhanf/3_processing/preproc-smk-new/another_dataset'
+
 bids_dir: '/scratch/akhanf/3_processing/preproc-smk-new/bids_test'
 output_dir: 'results'
 
