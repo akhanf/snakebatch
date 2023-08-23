@@ -1,7 +1,8 @@
-# batch-snakedwi
-Batch submit workflow for [snakedwi](https://github.com/akhanf/snakedwi). Runs each subject/session as a separate job,
+# snakebatch
+Customizeable batch submit workflow. Runs each subject/session as a separate job,
 writing output to a temp directory (e.g. $SLURM_TMPDIR) and copying the final outputs. 
  
+## TODO: instructions below are from batch-snakedwi - needs updating.. 
 
 ## Pre-requisites
 
