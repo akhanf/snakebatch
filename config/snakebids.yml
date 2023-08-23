@@ -1,11 +1,10 @@
 datasets:
-  mydataset: '/scratch/akhanf/3_processing/preproc-smk-new/test_data/bids_test'
-  anotherdataset: '/scratch/akhanf/3_processing/preproc-smk-new/test_data/another_dataset'
+  mydataset: 
+    bids_dir: '/scratch/akhanf/3_processing/preproc-smk-new/test_data/bids_test'
+  anotherdataset: 
+    bids_dir: '/scratch/akhanf/3_processing/preproc-smk-new/test_data/another_dataset'
 
 output_dir: 'results'
-
-#enable printing debug statements during parsing -- disable if generating dag visualization
-debug: False
 
 derivatives: False #will search in bids/derivatives if True; can also be path(s) to derivatives datasets
 

@@ -1,5 +1,3 @@
-#---- begin snakebids boilerplate ----------------------------------------------
-
 import snakebids
 from snakebids import bids
 from pathlib import Path
@@ -7,10 +5,9 @@ from pathlib import Path
 configfile: workflow.source_path('../config/snakebids.yml')
 
 #set pybids_database_dir to bids/.pybids
-config["pybids_db_dir"]=None
 #config["pybids_db_dir"]=Path(config["bids_dir"]) / Path('.pybids')
 
-#this adds constraints to the bids naming
+#this adds constraints to the bids naming (not really required for this workflow as is)
 wildcard_constraints:  **snakebids.get_wildcard_constraints(config['pybids_inputs'])
 
 
@@ -20,19 +17,20 @@ bids_intersect = dict()
 
 for dataset in config['datasets'].keys():
 
-    # Get input wildcards
-    inputs[dataset] = snakebids.generate_inputs(
-        bids_dir=config["datasets"][dataset],
-        pybids_inputs=config["pybids_inputs"],
-        pybidsdb_dir=config.get("pybids_db_dir"),
-        pybidsdb_reset=config.get("pybids_db_reset"),
-        derivatives=config.get("derivatives", None),
-        participant_label=config.get("participant_label", None),
-        exclude_participant_label=config.get("exclude_participant_label", None),
-    )
+    # parse bids dataset, using dataGet input wildcards
+    inputs[dataset] = snakebids.generate_inputs(        bids_dir=config["datasets"][dataset]['bids_dir'],
+        pybids_inputs=config['datasets'][dataset].get("pybids_inputs",config.get('pybids_inputs',None)),
+        pybidsdb_dir=config['datasets'][dataset].get("pybids_db_dir",config.get('pybids_db_dir',None)),
+        pybidsdb_reset=config['datasets'][dataset].get("pybids_db_reset",config.get('pybids_db_reset',None)),
+        derivatives=config['datasets'][dataset].get("derivatives",config.get('derivatives',None)),
+        participant_label=config['datasets'][dataset].get("participant_label",config.get('participant_label',None)),
+        exclude_participant_label=config['datasets'][dataset].get("exclude_participant_label",config.get('exclude_participant_label',None)))
+    
 
     subj_wildcards[dataset] = inputs[dataset].subj_wildcards
-    
+
+    # get the subjects that have all the bids components (e.g. both t1 and dwi)
+    #   we do this by getting the first component, and then filtering with the entities of each additional one..
     comps = list(inputs[dataset].keys())
     bids_intersect[dataset] = inputs[dataset][comps[0]]
 
@@ -157,7 +155,7 @@ for dataset in config['datasets'].keys():
         rule:
             name: f"{dataset}_{app}"
             input:
-                bids=lambda wildcards: config["datasets"][wildcards.dataset],
+                bids=lambda wildcards: config["datasets"][wildcards.dataset]['bids_dir'],
                 **get_sb_repo(app),
                 **get_sb_container(app),
             params:
