@@ -140,6 +140,8 @@ apps:
 
   hippunfold:
     snakebids: True
+    depends_on:
+      - snakedwi
     container: 'docker://khanlab/hippunfold:v1.3.3.sif'
     opts: '--modality T1w --keep-work'
     root_folders:

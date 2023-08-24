@@ -84,20 +84,31 @@ rule get_snakebids_app:
         url=lambda wildcards: config['apps'][wildcards.app]['url'],
         tag=lambda wildcards: config['apps'][wildcards.app]['tag'],
     output:
-        repo=directory("repo_{app}"),
+        repo=directory("resources/repos/{app}"),
     localrule: True
     shell:
         'git clone {params.url} -b {params.tag} {output.repo}'
 
 def get_sb_container(app):
     if 'container' in config["apps"][app].keys():
-        return {'container': f"containers/{app}.sif" }
+        return {'container': f"resources/containers/{app}.sif" }
     else:
         return {}
  
 def get_sb_repo(app):
     if 'url' in config["apps"][app].keys():
-        return {'repo': 'repo_{app}'}
+        return {'repo': 'resources/repos/{app}'}
+    else:
+        return {}
+  
+def get_dependencies(app,dataset):
+    if 'depends_on' in config["apps"][app].keys():
+        inputs=[]
+        for dep in  config["apps"][app]['depends_on']:
+            for root_folder in config['apps'][dep]['root_folders']:
+                inputs.append(Path(dataset)/dep/Path(bids(root=root_folder,**subj_wildcards[dataset])).parent)
+ 
+        return {'depends': inputs}
     else:
         return {}
         
@@ -111,7 +122,7 @@ def get_sb_singularity_opts(wildcards):
 
 def get_run_cmd(wildcards, input):
     if 'url' in config["apps"][wildcards.app].keys():
-        return f"repo_{wildcards.app}/{config['apps'][wildcards.app]['runscript']}",
+        return f"python3 resources/repos/{wildcards.app}/{config['apps'][wildcards.app]['runscript']}",
     elif 'container' in config["apps"][wildcards.app].keys():
 
         singularity_opts=config["apps"][wildcards.app].get("singularity_opts","")
@@ -149,7 +160,7 @@ for dataset in config['datasets'].keys():
             rule: 
                 name: f"get_container_{app}"
                 container: config["apps"][app]['container']
-                output: f"containers/{app}.sif"
+                output: f"resources/containers/{app}.sif"
                 localrule: True
                 shell:
                     "ln -sv $SINGULARITY_CONTAINER {output}"
@@ -158,6 +169,7 @@ for dataset in config['datasets'].keys():
             name: f"{dataset}_{app}"
             input:
                 bids=lambda wildcards: config["datasets"][wildcards.dataset]['bids_dir'],
+                **get_dependencies(app,dataset),
                 **get_sb_repo(app),
                 **get_sb_container(app),
             params:
