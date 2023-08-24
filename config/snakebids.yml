@@ -122,7 +122,7 @@ apps:
     snakebids: True
     url: 'http://github.com/pvandyken/snakeanat'
     tag: 'main'
-    runscript: 'snakeanat/run.py' #relative to the app repo
+    runscript: 'python snakeanat/run.py' #relative to the app repo
     opts: ''
     root_folders:
       - ''
@@ -141,10 +141,10 @@ apps:
   hippunfold:
     snakebids: True
     container: 'docker://khanlab/hippunfold:v1.3.3.sif'
-    opts: ''
+    opts: '--modality T1w --keep-work'
     root_folders:
       - 'hippunfold'
-      - 'work'
+      - 'work' #remove this if --keep-work not used
     input_to_filter: t1 #e.g. for --filter-dwi
     resources:
       cores: 8
@@ -157,7 +157,7 @@ apps:
   fmriprep:
     container: '/project/6050199/akhanf/singularity/bids-apps/nipreps_fmriprep_23.1.0.sif'
     singularity_opts: '-e'
-    opts: '--anat-only'
+    opts: '--fs-no-reconall --anat-only'
     root_folders:
       - ''
     input_to_filter: t1 #e.g. for --filter-dwi

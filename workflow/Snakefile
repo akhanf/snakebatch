@@ -65,7 +65,7 @@ rule all:
 def get_cmd_retain_outputs_from_tmp(wildcards,resources,output):
     output_files_folders=[]
     for root_folder in config['apps'][wildcards.app]['root_folders']:
-        output_files_folders.append(directory(Path(bids(root=root_folder,**subj_wildcards[wildcards.dataset])).parent))
+        output_files_folders.append(Path(bids(root=root_folder,**subj_wildcards[wildcards.dataset]).format(**wildcards)).parent)
         
     return ' && '.join([f'cp -Rv {resources.tmpdir}/{out} {wildcards.dataset}/{wildcards.app}/{out}' for out in output_files_folders]),
 
