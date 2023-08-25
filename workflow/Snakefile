@@ -7,9 +7,6 @@ configfile: workflow.source_path('../config/snakebids.yml')
 workflow._shadow_prefix=os.environ.get(config.get('tmpdir_env','TMPDIR'),None)
 workflow._default_resources.tmpdir=os.environ.get(config.get('tmpdir_env','TMPDIR'),None)
 
-#set pybids_database_dir to bids/.pybids
-#config["pybids_db_dir"]=Path(config["bids_dir"]) / Path('.pybids')
- 
 #this adds constraints to the bids naming (not really required for this workflow as is)
 wildcard_constraints:  **snakebids.get_wildcard_constraints(config['pybids_inputs'])
 
@@ -21,7 +18,8 @@ bids_intersect = dict()
 for dataset in config['datasets'].keys():
 
     # parse bids dataset, using dataGet input wildcards
-    inputs[dataset] = snakebids.generate_inputs(        bids_dir=config["datasets"][dataset]['bids_dir'],
+    inputs[dataset] = snakebids.generate_inputs(        
+        bids_dir=config["datasets"][dataset]['bids_dir'],
         pybids_inputs=config['datasets'][dataset].get("pybids_inputs",config.get('pybids_inputs',None)),
         pybidsdb_dir=config['datasets'][dataset].get("pybids_db_dir",config.get('pybids_db_dir',None)),
         pybidsdb_reset=config['datasets'][dataset].get("pybids_db_reset",config.get('pybids_db_reset',None)),
@@ -37,10 +35,9 @@ for dataset in config['datasets'].keys():
     comps = list(inputs[dataset].keys())
     bids_intersect[dataset] = inputs[dataset][comps[0]]
 
-    for c in comps[1:]:
-        bids_intersect[dataset] = bids_intersect[dataset].filter(**inputs[dataset][c].entities)
-
- 
+    if len(comps)>0:
+        for c in comps[1:]:
+            bids_intersect[dataset] = bids_intersect[dataset].filter(**inputs[dataset][c].entities[tuple(subj_wildcards[dataset].keys())])
 
 
 
