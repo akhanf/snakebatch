@@ -1,8 +1,8 @@
 datasets:
   mydataset: 
     bids_dir: '/scratch/akhanf/3_processing/preproc-smk-new/test_data/bids_test'
-  anotherdataset: 
-    bids_dir: '/scratch/akhanf/3_processing/preproc-smk-new/test_data/another_dataset'
+#  anotherdataset: 
+#    bids_dir: '/scratch/akhanf/3_processing/preproc-smk-new/test_data/another_dataset'
 
 output_dir: 'results'
 
@@ -106,7 +106,7 @@ apps:
     tag: 'v0.2.0-alpha'
     runscript: 'snakedwi/run.py' #relative to the app repo
     opts: ''
-    root_folders:
+    retain_subj_dirs_from:
       - 'snakedwi'
       - 'work'
     input_to_filter: dwi #e.g. for --filter-dwi
@@ -114,17 +114,16 @@ apps:
       cores: 8
       mem_mb: 32000
       runtime: 360 
-      tmpdir: '$SLURM_TMPDIR'
       gpus: 0
 
 
   snakeanat:
     snakebids: True
-    url: 'http://github.com/pvandyken/snakeanat'
-    tag: 'main'
-    runscript: 'python snakeanat/run.py' #relative to the app repo
-    opts: ''
-    root_folders:
+    url: 'http://github.com/akhanf/snakeanat'
+    tag: 'updates'
+    runscript: 'snakeanat/run.py' #relative to the app repo
+    opts: '--use-envmodules'
+    retain_subj_dirs_from:
       - ''
       - 'qc'
       - 'sourcedata/fastsurfer'
@@ -133,8 +132,7 @@ apps:
     resources:
       cores: 8
       mem_mb: 32000
-      runtime: 360 
-      tmpdir: '$SLURM_TMPDIR'
+      runtime: 720 
       gpus: 0
 
 
@@ -144,7 +142,7 @@ apps:
       - snakedwi
     container: 'docker://khanlab/hippunfold:v1.3.3.sif'
     opts: '--modality T1w --keep-work'
-    root_folders:
+    retain_subj_dirs_from:
       - 'hippunfold'
       - 'work' #remove this if --keep-work not used
     input_to_filter: t1 #e.g. for --filter-dwi
@@ -152,7 +150,6 @@ apps:
       cores: 8
       mem_mb: 32000
       runtime: 360 
-      tmpdir: '$SLURM_TMPDIR'
       gpus: 0
 
 
@@ -160,14 +157,20 @@ apps:
     container: '/project/6050199/akhanf/singularity/bids-apps/nipreps_fmriprep_23.1.0.sif'
     singularity_opts: '-e'
     opts: '--fs-no-reconall --anat-only'
-    root_folders:
+    retain_subj_dirs_from:
       - ''
     input_to_filter: t1 #e.g. for --filter-dwi
     resources:
       cores: 8
       mem_mb: 32000
       runtime: 360 
-      tmpdir: '$SLURM_TMPDIR'
       gpus: 0
 
+default_resources:  #uses these if not specified in app
+  cores: 8
+  mem_mb: 32000
+  runtime: 360 
+  tmpdir: /tmp
+  gpus: 0
 
+tmpdir_env: SLURM_TMPDIR  
