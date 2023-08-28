@@ -145,6 +145,18 @@ for dataset in config['datasets'].keys():
             out_subj_dirs.append(directory(Path(f'{{dataset,{dataset}}}/{{app,{app}}}')/Path(bids(root=root_dir,**subj_wildcards[dataset])).parent))
         return out_subj_dirs
 
+    def get_out_additional_files(app,dataset):
+        """ This function is used to select what files to retain, since the 
+        app is run on /tmp, and only files listed here will be copied over"""
+
+        if 'retain_files' not in config['apps'][app]:
+            return []
+
+        out_files=[]
+        for f in config['apps'][app]['retain_files']:
+            out_files.append(Path(f'{{dataset,{dataset}}}/{{app,{app}}}')/f)
+        return out_files
+
 
     for app in config['apps'].keys():
 
@@ -166,12 +178,13 @@ for dataset in config['datasets'].keys():
                 **get_sb_container(app),
             params:
                 run_cmd=get_run_cmd,
-                app_opts=lambda wildcards: config["apps"][wildcards.app]['opts'],
+                app_opts=lambda wildcards: config["apps"][wildcards.app]['opts'].format(**wildcards),
                 singularity_opts=get_sb_singularity_opts,
                 session_filter=get_session_filter,
                 snakebids_opts=get_snakebids_opts,
             output:
-                get_out_subj_dirs(app,dataset)
+                get_out_subj_dirs(app,dataset),
+                get_out_additional_files(app,dataset)
             
             log: 
                 bids(root='logs/{dataset}_{app}',**subj_wildcards[dataset])

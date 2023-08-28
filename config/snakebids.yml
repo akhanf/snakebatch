@@ -1,8 +1,6 @@
 datasets:
-  mydataset: 
-    bids_dir: '/scratch/akhanf/3_processing/preproc-smk-new/test_data/bids_test'
-#  anotherdataset: 
-#    bids_dir: '/scratch/akhanf/3_processing/preproc-smk-new/test_data/another_dataset'
+  LOBE: 
+    bids_dir: '/project/6050199/akhanf/cfmm-bids/data/Khan/LOBE/raw/baseline/bids'
 
 output_dir: 'results'
 
@@ -108,14 +106,13 @@ apps:
     opts: ''
     retain_subj_dirs_from:
       - 'snakedwi'
-      - 'work'
-    input_to_filter: dwi #e.g. for --filter-dwi
+    input_to_filter: dwi #e.g. for --filter-dw
+    singularity_opts: '--nv'
     resources:
       cores: 8
       mem_mb: 32000
       runtime: 360 
-      gpus: 0
-
+      gpus: 1
 
   snakeanat:
     snakebids: True
@@ -125,23 +122,22 @@ apps:
     opts: '--use-envmodules'
     retain_subj_dirs_from:
       - ''
-      - 'qc'
-      - 'sourcedata/fastsurfer'
       - 'sourcedata/ciftify'
+      - 'sourcedata/fastsurfer'
+      - 'sourcedata/fastsurfer_surf'
+      - 'qc'
     input_to_filter: t1 #e.g. for --filter-dwi
     resources:
       cores: 8
-      mem_mb: 32000
-      runtime: 720 
+      mem_mb: 16000
+      runtime: 720
       gpus: 0
 
 
   hippunfold:
     snakebids: True
-    depends_on:
-      - snakedwi
     container: 'docker://khanlab/hippunfold:v1.3.3.sif'
-    opts: '--modality T1w --keep-work'
+    opts: '--modality T1w --keep-work --generate-myelin-map'
     retain_subj_dirs_from:
       - 'hippunfold'
       - 'work' #remove this if --keep-work not used
@@ -152,19 +148,23 @@ apps:
       runtime: 360 
       gpus: 0
 
-
   fmriprep:
     container: '/project/6050199/akhanf/singularity/bids-apps/nipreps_fmriprep_23.1.0.sif'
+    depends_on:
+      - snakeanat
     singularity_opts: '-e'
-    opts: '--fs-no-reconall --anat-only'
-    retain_subj_dirs_from:
+    opts: '--fs-subjects-dir {dataset}/snakeanat/sourcedata/fastsurfer_surf'
+    retain_subj_dirs_from: #no way to save html files as of yet..
       - ''
+    retain_files: #relative to output folder
+      - 'sub-{subject}.html'
     input_to_filter: t1 #e.g. for --filter-dwi
     resources:
       cores: 8
       mem_mb: 32000
       runtime: 360 
       gpus: 0
+
 
 default_resources:  #uses these if not specified in app
   cores: 8
