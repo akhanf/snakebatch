@@ -2,31 +2,48 @@ import snakebids
 from snakebids import bids
 from pathlib import Path
 
-configfile: workflow.source_path('../config/config.yml')
 
-workflow._shadow_prefix=os.environ.get(config.get('tmpdir_env','TMPDIR'),None)
-workflow._default_resources.tmpdir=os.environ.get(config.get('tmpdir_env','TMPDIR'),None)
+configfile: workflow.source_path("../config/config.yml")
 
-#this adds constraints to the bids naming (not really required for this workflow as is)
-wildcard_constraints:  **snakebids.get_wildcard_constraints(config['pybids_inputs'])
+
+workflow._shadow_prefix = os.environ.get(config.get("tmpdir_env", "TMPDIR"), None)
+workflow._default_resources.tmpdir = os.environ.get(
+    config.get("tmpdir_env", "TMPDIR"), None
+)
+
+
+# this adds constraints to the bids naming (not really required for this workflow as is)
+wildcard_constraints:
+    **snakebids.get_wildcard_constraints(config["pybids_inputs"]),
 
 
 inputs = dict()
 subj_wildcards = dict()
 bids_intersect = dict()
 
-for dataset in config['datasets'].keys():
-
-    # parse bids dataset, using dataGet input wildcards
-    inputs[dataset] = snakebids.generate_inputs(        
-        bids_dir=config["datasets"][dataset]['bids_dir'],
-        pybids_inputs=config['datasets'][dataset].get("pybids_inputs",config.get('pybids_inputs',None)),
-        pybidsdb_dir=config['datasets'][dataset].get("pybids_db_dir",config.get('pybids_db_dir',None)),
-        pybidsdb_reset=config['datasets'][dataset].get("pybids_db_reset",config.get('pybids_db_reset',None)),
-        derivatives=config['datasets'][dataset].get("derivatives",config.get('derivatives',None)),
-        participant_label=config['datasets'][dataset].get("participant_label",config.get('participant_label',None)),
-        exclude_participant_label=config['datasets'][dataset].get("exclude_participant_label",config.get('exclude_participant_label',None)))
-    
+for dataset in config["datasets"].keys():
+    # parse bids dataset, using dataset input wildcards
+    inputs[dataset] = snakebids.generate_inputs(
+        bids_dir=config["datasets"][dataset]["bids_dir"],
+        pybids_inputs=config["datasets"][dataset].get(
+            "pybids_inputs", config.get("pybids_inputs", None)
+        ),
+        pybidsdb_dir=config["datasets"][dataset].get(
+            "pybids_db_dir", config.get("pybids_db_dir", None)
+        ),
+        pybidsdb_reset=config["datasets"][dataset].get(
+            "pybids_db_reset", config.get("pybids_db_reset", None)
+        ),
+        derivatives=config["datasets"][dataset].get(
+            "derivatives", config.get("derivatives", None)
+        ),
+        participant_label=config["datasets"][dataset].get(
+            "participant_label", config.get("participant_label", None)
+        ),
+        exclude_participant_label=config["datasets"][dataset].get(
+            "exclude_participant_label", config.get("exclude_participant_label", None)
+        ),
+    )
 
     subj_wildcards[dataset] = inputs[dataset].subj_wildcards
 
@@ -35,177 +52,209 @@ for dataset in config['datasets'].keys():
     comps = list(inputs[dataset].keys())
     bids_intersect[dataset] = inputs[dataset][comps[0]]
 
-    if len(comps)>0:
+    if len(comps) > 0:
         for c in comps[1:]:
-            bids_intersect[dataset] = bids_intersect[dataset].filter(**inputs[dataset][c].entities[tuple(subj_wildcards[dataset].keys())])
-
+            bids_intersect[dataset] = bids_intersect[dataset].filter(
+                **inputs[dataset][c].entities[tuple(subj_wildcards[dataset].keys())]
+            )
 
 
 def get_targets():
-    """ final output files are of the form: {dataset}/{app}/{root_dir}/sub-{subject}/ses-{session} """
-    targets=list()
-    for dataset in config['datasets'].keys():
-        for app in config['apps'].keys():
-            for root in config['apps'][app]['retain_subj_dirs_from']:
+    """final output files are of the form: {dataset}/{app}/{root_dir}/sub-{subject}/ses-{session}"""
+    targets = list()
+    for dataset in config["datasets"].keys():
+        for app in config["apps"].keys():
+            for root in config["apps"][app]["retain_subj_dirs_from"]:
                 targets.extend(
-                            bids_intersect[dataset].expand(
-                                    Path(dataset)/Path(app)/Path(
-                                        bids(
-                                        root=root,
-                                        **subj_wildcards[dataset])).parent)
-                                        )
-                                        
+                    bids_intersect[dataset].expand(
+                        Path(dataset)
+                        / Path(app)
+                        / Path(bids(root=root, **subj_wildcards[dataset])).parent
+                    )
+                )
+
     return targets
 
 
 rule all:
-    input: 
-        get_targets()
-   
-    
+    input:
+        get_targets(),
+
+
 def get_session_filter(wildcards):
-    input_to_filter = config['apps'][wildcards.app]['input_to_filter']
-    if 'session' in wildcards._names:
+    input_to_filter = config["apps"][wildcards.app]["input_to_filter"]
+    if "session" in wildcards._names:
         return f"--filter-{input_to_filter} session={wildcards.session}"
     else:
-        return ''
+        return ""
+
 
 def get_bids_input(wildcards, input):
-    if 'bids_dir' in config['apps'][wildcards.app]:
-        return config['apps'][wildcards.app]['bids_dir'].format(**wildcards)
+    if "bids_dir" in config["apps"][wildcards.app]:
+        return config["apps"][wildcards.app]["bids_dir"].format(**wildcards)
     else:
         return input.bids
 
+
 rule get_snakebids_app:
     params:
-        url=lambda wildcards: config['apps'][wildcards.app]['url'],
-        tag=lambda wildcards: config['apps'][wildcards.app]['tag'],
+        url=lambda wildcards: config["apps"][wildcards.app]["url"],
+        tag=lambda wildcards: config["apps"][wildcards.app]["tag"],
     output:
         repo=directory("resources/repos/{app}"),
     localrule: True
     shell:
-        'git clone {params.url} -b {params.tag} {output.repo}'
+        "git clone {params.url} -b {params.tag} {output.repo}"
+
 
 def get_sb_container(app):
-    if 'container' in config["apps"][app].keys():
-        return {'container': f"resources/containers/{app}.sif" }
+    if "container" in config["apps"][app].keys():
+        return {"container": f"resources/containers/{app}.sif"}
     else:
         return {}
- 
+
+
 def get_sb_repo(app):
-    if 'url' in config["apps"][app].keys():
-        return {'repo': 'resources/repos/{app}'}
+    if "url" in config["apps"][app].keys():
+        return {"repo": "resources/repos/{app}"}
     else:
         return {}
-  
-def get_dependencies(app,dataset):
-    if 'depends_on' in config["apps"][app].keys():
-        inputs=[]
-        for dep in  config["apps"][app]['depends_on']:
-            for root_dir in config['apps'][dep]['retain_subj_dirs_from']:
-                inputs.append(Path(dataset)/dep/Path(bids(root=root_dir,**subj_wildcards[dataset])).parent)
- 
-        return {'depends': inputs}
+
+
+def get_dependencies(app, dataset):
+    if "depends_on" in config["apps"][app].keys():
+        inputs = []
+        for dep in config["apps"][app]["depends_on"]:
+            for root_dir in config["apps"][dep]["retain_subj_dirs_from"]:
+                inputs.append(
+                    Path(dataset)
+                    / dep
+                    / Path(bids(root=root_dir, **subj_wildcards[dataset])).parent
+                )
+
+        return {"depends": inputs}
     else:
         return {}
-        
+
+
 def get_sb_singularity_opts(wildcards):
-    if 'url' in config["apps"][wildcards.app].keys():
+    if "url" in config["apps"][wildcards.app].keys():
         return f"--use-singularity --singularity-prefix {config['singularity_prefix']}"
     else:
         return ""
 
+
 def get_shadow(app):
-    return config['apps'][app].get('shadow',config.get('shadow',None))
+    return config["apps"][app].get("shadow", config.get("shadow", None))
+
 
 def get_run_cmd(wildcards, input):
-    if 'url' in config["apps"][wildcards.app].keys():
-        return f"python3 resources/repos/{wildcards.app}/{config['apps'][wildcards.app]['runscript']}",
-    elif 'container' in config["apps"][wildcards.app].keys():
+    if "url" in config["apps"][wildcards.app].keys():
+        return (
+            f"python3 resources/repos/{wildcards.app}/{config['apps'][wildcards.app]['runscript']}",
+        )
+    elif "container" in config["apps"][wildcards.app].keys():
+        singularity_opts = config["apps"][wildcards.app].get("singularity_opts", "")
 
-        singularity_opts=config["apps"][wildcards.app].get("singularity_opts","")
-            
-        if 'runscript' in config["apps"][wildcards.app].keys():
+        if "runscript" in config["apps"][wildcards.app].keys():
             return f"singularity exec {singularity_opts} {input.container} {input.runscript}"
         else:
-            return f'singularity run {singularity_opts} {input.container}'
+            return f"singularity run {singularity_opts} {input.container}"
     else:
         return ""
 
 
-def get_snakebids_opts(wildcards,input,threads):
-    if config["apps"][wildcards.app].get('snakebids',False):
-        return f"-p --force-output --cores {threads} --pybidsdb-dir {input.bids}/.pybids"
+def get_snakebids_opts(wildcards, input, threads):
+    if config["apps"][wildcards.app].get("snakebids", False):
+        return (
+            f"-p --force-output --cores {threads} --pybidsdb-dir {input.bids}/.pybids"
+        )
     else:
         return ""
 
 
-for dataset in config['datasets'].keys():
+for dataset in config["datasets"].keys():
 
-    def get_out_subj_dirs(app,dataset):
-        """ This function is used to select what files to retain, since the 
+    def get_out_subj_dirs(app, dataset):
+        """This function is used to select what files to retain, since the
         app is run on /tmp, and only files listed here will be copied over"""
 
-        out_subj_dirs=[]
-        for root_dir in config['apps'][app]['retain_subj_dirs_from']:
-            out_subj_dirs.append(directory(Path(f'{{dataset,{dataset}}}/{{app,{app}}}')/Path(bids(root=root_dir,**subj_wildcards[dataset])).parent))
+        out_subj_dirs = []
+        for root_dir in config["apps"][app]["retain_subj_dirs_from"]:
+            out_subj_dirs.append(
+                directory(
+                    Path(f"{{dataset,{dataset}}}/{{app,{app}}}")
+                    / Path(bids(root=root_dir, **subj_wildcards[dataset])).parent
+                )
+            )
         return out_subj_dirs
 
-    def get_out_additional_files(app,dataset):
-        """ This function is used to select what files to retain, since the 
-        app is run on /tmp, and only files listed here will be copied over"""
+    def get_out_additional_files(app, dataset):
+        """This function is used to select what files to retain, since when the
+        app is run in shadow, only files listed here will be copied over"""
 
-        if 'retain_files' not in config['apps'][app]:
+        if "retain_files" not in config["apps"][app]:
             return []
 
-        out_files=[]
-        for f in config['apps'][app]['retain_files']:
-            out_files.append(Path(f'{{dataset,{dataset}}}/{{app,{app}}}')/f)
+        out_files = []
+        for f in config["apps"][app]["retain_files"]:
+            out_files.append(Path(f"{{dataset,{dataset}}}/{{app,{app}}}") / f)
         return out_files
 
+    for app in config["apps"].keys():
+        if "container" in config["apps"][app].keys():
 
-    for app in config['apps'].keys():
-
-        if 'container' in config['apps'][app].keys():
-            rule: 
-                name: f"get_container_{app}"
-                container: config["apps"][app]['container']
-                output: f"resources/containers/{app}.sif"
+            rule:
+                name:
+                    f"get_container_{app}"
+                container:
+                    config["apps"][app]["container"]
+                output:
+                    f"resources/containers/{app}.sif",
                 localrule: True
                 shell:
                     "ln -sv $SINGULARITY_CONTAINER {output}"
 
         rule:
-            name: f"{dataset}_{app}"
+            name:
+                f"{dataset}_{app}"
             input:
-                bids=lambda wildcards: config["datasets"][wildcards.dataset]['bids_dir'],
-                **get_dependencies(app,dataset),
+                **get_dependencies(app, dataset),
                 **get_sb_repo(app),
                 **get_sb_container(app),
+                bids=lambda wildcards: config["datasets"][wildcards.dataset]["bids_dir"],
             params:
                 run_cmd=get_run_cmd,
-                app_opts=lambda wildcards: config["apps"][wildcards.app]['opts'].format(**wildcards),
+                app_opts=lambda wildcards: config["apps"][wildcards.app][
+                    "opts"
+                ].format(**wildcards),
                 singularity_opts=get_sb_singularity_opts,
                 session_filter=get_session_filter,
                 snakebids_opts=get_snakebids_opts,
                 bids=get_bids_input,
             output:
-                get_out_subj_dirs(app,dataset),
-                get_out_additional_files(app,dataset)
-            
-            log: 
-                bids(root='logs/{dataset}_{app}',**subj_wildcards[dataset])
-            threads: lambda wildcards: config['apps'][wildcards.app]['resources'].get('cores',config['default_resources']['cores'])
-            resources: 
-                mem_mb=lambda wildcards: config['apps'][wildcards.app]['resources'].get('mem_mb',config['default_resources']['mem_mb']),
-                runtime=lambda wildcards: config['apps'][wildcards.app]['resources'].get('runtime',config['default_resources']['runtime']),
-                gpus=lambda wildcards: config['apps'][wildcards.app]['resources'].get('gpus',config['default_resources']['gpus']),
-            shadow: get_shadow(app)
-           # 'minimal' #to avoid polluting working dir
-            shell: 
-                '{params.run_cmd} {params.bids} {wildcards.dataset}/{wildcards.app}  participant '
-                '--participant_label {wildcards.subject} {params.session_filter} '
-                '{params.snakebids_opts} '
-                '{params.app_opts} '
-                '{params.singularity_opts}'
-            
+                get_out_subj_dirs(app, dataset),
+                get_out_additional_files(app, dataset),
+            log:
+                bids(root="logs/{dataset}_{app}", **subj_wildcards[dataset]),
+            threads: lambda wildcards: config["apps"][wildcards.app]["resources"].get(
+    "cores", config["default_resources"]["cores"]
+)
+            resources:
+                mem_mb=lambda wildcards: config["apps"][wildcards.app][
+                    "resources"
+                ].get("mem_mb", config["default_resources"]["mem_mb"]),
+                runtime=lambda wildcards: config["apps"][wildcards.app][
+                    "resources"
+                ].get("runtime", config["default_resources"]["runtime"]),
+                gpus=lambda wildcards: config["apps"][wildcards.app]["resources"].get(
+                    "gpus", config["default_resources"]["gpus"]
+                ),
+            shadow:
+                get_shadow(app)
+            shell:
+                "{params.run_cmd} {params.bids} {wildcards.dataset}/{wildcards.app}  participant "
+                "--participant_label {wildcards.subject} {params.session_filter} "
+                "{params.snakebids_opts} "
+                "{params.app_opts} "
+                "{params.singularity_opts}"
