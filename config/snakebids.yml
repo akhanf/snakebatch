@@ -165,6 +165,28 @@ apps:
       runtime: 360 
       gpus: 0
 
+  scattr:
+    bids_dir: '{dataset}/snakeanat'
+    snakebids: True
+    url: 'http://github.com/akhanf/scattr'
+    tag: 'new-snakedwi'
+    runscript: 'scattr/run.py' #relative to the app repo
+    depends_on:
+      - snakeanat
+      - snakedwi
+    singularity_opts: '-e'
+    shadow: null
+    opts: '--filter-T1w desc=preproc space=T1w  --freesurfer_dir {dataset}/snakeanat/sourcedata/fastsurfer_surf --dwi_dir {dataset}/snakedwi/snakedwi --profile cc-slurm'
+    retain_subj_dirs_from: #no way to save html files as of yet..
+      - 'mrtrix'
+      - 'labelmerge'
+    input_to_filter: dwi #e.g. for --filter-dwi
+    resources:
+      cores: 1
+      mem_mb: 4000
+      runtime: 1440
+      gpus: 0
+
 
 default_resources:  #uses these if not specified in app
   cores: 8
@@ -174,3 +196,4 @@ default_resources:  #uses these if not specified in app
   gpus: 0
 
 tmpdir_env: SLURM_TMPDIR  
+shadow: 'minimal'

@@ -70,6 +70,11 @@ def get_session_filter(wildcards):
     else:
         return ''
 
+def get_bids_input(wildcards, input):
+    if 'bids_dir' in config['apps'][wildcards.app]:
+        return config['apps'][wildcards.app]['bids_dir'].format(**wildcards)
+    else:
+        return input.bids
 
 rule get_snakebids_app:
     params:
@@ -110,7 +115,8 @@ def get_sb_singularity_opts(wildcards):
     else:
         return ""
 
-
+def get_shadow(app):
+    return config['apps'][app].get('shadow',config.get('shadow',None))
 
 def get_run_cmd(wildcards, input):
     if 'url' in config["apps"][wildcards.app].keys():
@@ -182,6 +188,7 @@ for dataset in config['datasets'].keys():
                 singularity_opts=get_sb_singularity_opts,
                 session_filter=get_session_filter,
                 snakebids_opts=get_snakebids_opts,
+                bids=get_bids_input,
             output:
                 get_out_subj_dirs(app,dataset),
                 get_out_additional_files(app,dataset)
@@ -193,9 +200,10 @@ for dataset in config['datasets'].keys():
                 mem_mb=lambda wildcards: config['apps'][wildcards.app]['resources'].get('mem_mb',config['default_resources']['mem_mb']),
                 runtime=lambda wildcards: config['apps'][wildcards.app]['resources'].get('runtime',config['default_resources']['runtime']),
                 gpus=lambda wildcards: config['apps'][wildcards.app]['resources'].get('gpus',config['default_resources']['gpus']),
-            shadow: 'minimal' #to avoid polluting working dir
+            shadow: get_shadow(app)
+           # 'minimal' #to avoid polluting working dir
             shell: 
-                '{params.run_cmd} {input.bids} {wildcards.dataset}/{wildcards.app}  participant '
+                '{params.run_cmd} {params.bids} {wildcards.dataset}/{wildcards.app}  participant '
                 '--participant_label {wildcards.subject} {params.session_filter} '
                 '{params.snakebids_opts} '
                 '{params.app_opts} '
