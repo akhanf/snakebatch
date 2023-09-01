@@ -241,9 +241,8 @@ for dataset in config["datasets"].keys():
                 get_out_additional_files(app, dataset),
             log:
                 bids(root="logs/{dataset}_{app}", **subj_wildcards[dataset]),
-            threads: lambda wildcards: config["apps"][wildcards.app]["resources"].get(
-    "cores", config["defaults"]["resources"]["cores"]
-)
+            threads: 
+                lambda wildcards: config["apps"][wildcards.app]["resources"].get("cores", config["defaults"]["resources"]["cores"])
             resources:
                 mem_mb=lambda wildcards: config["apps"][wildcards.app][
                     "resources"
