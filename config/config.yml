@@ -10,49 +10,52 @@ datasets:
 #   dictionary for each input is passed directly to pybids get()
 #    https://bids-standard.github.io/pybids/generated/bids.layout.BIDSLayout.html#bids.layout.BIDSLayout.get
 
-pybids_inputs:
-  dwi:
-    filters:
-      suffix: 'dwi'
-      extension: '.nii.gz'
-      datatype: 'dwi'
-    wildcards:
-      - subject
-      - session
-      - acquisition
-      - run
-      - direction
-  t1:
-    filters:
-      suffix: 'T1w'
-      extension: '.nii.gz'
-      datatype: 'anat'
-    wildcards:
-      - subject
-      - session
-      - acquisition
-      - run
+defaults:
+
+  pybids_inputs:  #can be overriden in the dataset
+    dwi:
+      filters:
+        suffix: 'dwi'
+        extension: '.nii.gz'
+        datatype: 'dwi'
+      wildcards:
+        - subject
+        - session
+        - acquisition
+        - run
+        - direction
+    t1:
+      filters:
+        suffix: 'T1w'
+        extension: '.nii.gz'
+        datatype: 'anat'
+      wildcards:
+        - subject
+        - session
+        - acquisition
+        - run
 
 
-#this configures the options to save the BIDSLayout
-# by default, database is not saved (uncomment to save)
-# NOTE: pybids_db_dir must be an absolute path
-# pybids_db_dir: '/path/to/db_dir' # Leave blank if you do not wish to use this
-# pybids_db_reset: False # Change this to true to update the database
+  #this configures the options to save the BIDSLayout
+  # by default, database is not saved (uncomment to save)
+  # NOTE: pybids_db_dir must be an absolute path
+  # pybids_db_dir: '/path/to/db_dir' # Leave blank if you do not wish to use this
+  # pybids_db_reset: False # Change this to true to update the database
 
-derivatives: False #will search in bids/derivatives if True; can also be path(s) to derivatives datasets
 
-singularity_prefix: '/project/6050199/akhanf/singularity/snakemake_containers'
+  derivatives: False #will search in bids/derivatives if True; can also be path(s) to derivatives datasets - can be overriden in datasets
 
-default_resources:  #uses these if not specified in app
-  cores: 8
-  mem_mb: 32000
-  runtime: 360 
-  tmpdir: /tmp
-  gpus: 0
+  singularity_prefix: '/project/6050199/akhanf/singularity/snakemake_containers' #can be overriden in apps
 
-tmpdir_env: SLURM_TMPDIR  
-shadow: 'minimal'
+  resources:  # can be overriden in apps
+    cores: 8
+    mem_mb: 32000
+    runtime: 360 
+    tmpdir: /tmp
+    gpus: 0
+
+  tmpdir_env: SLURM_TMPDIR  
+  shadow: 'minimal'
 
 
 
@@ -115,8 +118,8 @@ apps:
     depends_on:
       - snakeanat
     singularity_opts: '-e'
-    opts: '--fs-subjects-dir {dataset}/snakeanat/sourcedata/fastsurfer_surf'
-    retain_subj_dirs_from: #no way to save html files as of yet..
+    opts: '--fs-subjects-dir {dataset}/derivatives/snakeanat/sourcedata/fastsurfer_surf'
+    retain_subj_dirs_from: 
       - ''
     retain_files: #relative to output folder
       - 'sub-{subject}.html'
@@ -128,7 +131,7 @@ apps:
       gpus: 0
 
   scattr:
-    bids_dir: '{dataset}/snakeanat'
+    bids_dir: '{dataset}/derivatives/snakeanat'
     snakebids: True
     url: 'http://github.com/akhanf/scattr'
     tag: 'new-snakedwi'
@@ -138,8 +141,8 @@ apps:
       - snakedwi
     singularity_opts: '-e'
     shadow: null
-    opts: '--filter-T1w desc=preproc space=T1w  --freesurfer_dir {dataset}/snakeanat/sourcedata/fastsurfer_surf --dwi_dir {dataset}/snakedwi/snakedwi --profile cc-slurm'
-    retain_subj_dirs_from: #no way to save html files as of yet..
+    opts: '--filter-T1w desc=preproc space=T1w  --freesurfer_dir {dataset}/derivatives/snakeanat/sourcedata/fastsurfer_surf --dwi_dir {dataset}/snakedwi/snakedwi --profile cc-slurm'
+    retain_subj_dirs_from: 
       - 'mrtrix'
       - 'labelmerge'
     input_to_filter: dwi #e.g. for --filter-dwi
