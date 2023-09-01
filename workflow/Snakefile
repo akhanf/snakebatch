@@ -2,7 +2,7 @@ import snakebids
 from snakebids import bids
 from pathlib import Path
 
-configfile: workflow.source_path('../config/snakebids.yml')
+configfile: workflow.source_path('../config/config.yml')
 
 workflow._shadow_prefix=os.environ.get(config.get('tmpdir_env','TMPDIR'),None)
 workflow._default_resources.tmpdir=os.environ.get(config.get('tmpdir_env','TMPDIR'),None)
