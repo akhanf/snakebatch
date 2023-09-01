@@ -1,6 +1,11 @@
 # snakebatch
 Customizeable batch submit workflow. Runs each subject/session as a separate job,
-writing output to a temp directory (e.g. $SLURM_TMPDIR) and copying the final outputs. 
+optionally writing output to a temp directory (e.g. $SLURM_TMPDIR) through the
+use of shadow rule & shadow-prefix. 
+
+
+
+
  
 ## TODO: instructions below are from batch-snakedwi - needs updating.. 
 
@@ -13,9 +18,19 @@ writing output to a temp directory (e.g. $SLURM_TMPDIR) and copying the final ou
 
 ## Instructions
 
-1. Clone this repository (can clone to a `/project` folder since it still runs the app on local scratch)
+1. Clone this repository 
 
-2. Edit the `config/snakebids.yml` file to customize your run options. Pay attention to the following options:
+2. Edit the `config/config.yml` file to customize your run options.
+
+ Describe sections of each config:
+
+ datasets:
+
+ apps:
+
+ defaults: #sets global options
+
+
   - `tag:` this is the tag, branch, or commit to use for the app
   - `opts:` this defines the CLI options for the app
   - `resources:` this defines how much resources each session is allocated when submitting jobs

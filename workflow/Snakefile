@@ -6,15 +6,15 @@ from pathlib import Path
 configfile: workflow.source_path("../config/config.yml")
 
 
-workflow._shadow_prefix = os.environ.get(config.get("tmpdir_env", "TMPDIR"), None)
+workflow._shadow_prefix = os.environ.get(config['defaults'].get("tmpdir_env", "TMPDIR"), None)
 workflow._default_resources.tmpdir = os.environ.get(
-    config.get("tmpdir_env", "TMPDIR"), None
+    config['defaults'].get("tmpdir_env", "TMPDIR"), None
 )
 
 
 # this adds constraints to the bids naming (not really required for this workflow as is)
 wildcard_constraints:
-    **snakebids.get_wildcard_constraints(config["pybids_inputs"]),
+    **snakebids.get_wildcard_constraints(config['defaults'].get("pybids_inputs")),
 
 
 inputs = dict()
@@ -26,22 +26,22 @@ for dataset in config["datasets"].keys():
     inputs[dataset] = snakebids.generate_inputs(
         bids_dir=config["datasets"][dataset]["bids_dir"],
         pybids_inputs=config["datasets"][dataset].get(
-            "pybids_inputs", config.get("pybids_inputs", None)
+            "pybids_inputs", config['defaults'].get("pybids_inputs", None)
         ),
         pybidsdb_dir=config["datasets"][dataset].get(
-            "pybids_db_dir", config.get("pybids_db_dir", None)
+            "pybids_db_dir", config['defaults'].get("pybids_db_dir", None)
         ),
         pybidsdb_reset=config["datasets"][dataset].get(
-            "pybids_db_reset", config.get("pybids_db_reset", None)
+            "pybids_db_reset", config['defaults'].get("pybids_db_reset", None)
         ),
         derivatives=config["datasets"][dataset].get(
-            "derivatives", config.get("derivatives", None)
+            "derivatives", config['defaults'].get("derivatives", None)
         ),
         participant_label=config["datasets"][dataset].get(
-            "participant_label", config.get("participant_label", None)
+            "participant_label", config['defaults'].get("participant_label", None)
         ),
         exclude_participant_label=config["datasets"][dataset].get(
-            "exclude_participant_label", config.get("exclude_participant_label", None)
+            "exclude_participant_label", config['defaults'].get("exclude_participant_label", None)
         ),
     )
 
@@ -139,7 +139,11 @@ def get_dependencies(app, dataset):
 
 def get_sb_singularity_opts(wildcards):
     if "url" in config["apps"][wildcards.app].keys():
-        return f"--use-singularity --singularity-prefix {config['singularity_prefix']}"
+        singularity_prefix = config['apps'][wildcards.app].get('singularity_prefix',config['defaults'].get('singularity_prefix',None)) #look in apps, then defaults
+        if singularity_prefix == None:
+            return '--use-singularity'
+        else:
+            return f"--use-singularity --singularity-prefix {singularity_prefix}"
     else:
         return ""
 
@@ -238,17 +242,17 @@ for dataset in config["datasets"].keys():
             log:
                 bids(root="logs/{dataset}_{app}", **subj_wildcards[dataset]),
             threads: lambda wildcards: config["apps"][wildcards.app]["resources"].get(
-    "cores", config["default_resources"]["cores"]
+    "cores", config["defaults"]["resources"]["cores"]
 )
             resources:
                 mem_mb=lambda wildcards: config["apps"][wildcards.app][
                     "resources"
-                ].get("mem_mb", config["default_resources"]["mem_mb"]),
+                ].get("mem_mb", config["defaults"]["resources"]["mem_mb"]),
                 runtime=lambda wildcards: config["apps"][wildcards.app][
                     "resources"
-                ].get("runtime", config["default_resources"]["runtime"]),
+                ].get("runtime", config["defaults"]["resources"]["runtime"]),
                 gpus=lambda wildcards: config["apps"][wildcards.app]["resources"].get(
-                    "gpus", config["default_resources"]["gpus"]
+                    "gpus", config["defaults"]["resources"]["gpus"]
                 ),
             shadow:
                 get_shadow(app)
