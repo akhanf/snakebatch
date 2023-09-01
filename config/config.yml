@@ -118,7 +118,7 @@ apps:
     depends_on:
       - snakeanat
     singularity_opts: '-e'
-    opts: '--fs-subjects-dir {dataset}/snakeanat/sourcedata/fastsurfer_surf'
+    opts: '--fs-subjects-dir {dataset}/derivatives/snakeanat/sourcedata/fastsurfer_surf'
     retain_subj_dirs_from: 
       - ''
     retain_files: #relative to output folder
@@ -131,7 +131,7 @@ apps:
       gpus: 0
 
   scattr:
-    bids_dir: '{dataset}/snakeanat'
+    bids_dir: '{dataset}/derivatives/snakeanat'
     snakebids: True
     url: 'http://github.com/akhanf/scattr'
     tag: 'new-snakedwi'
@@ -141,7 +141,7 @@ apps:
       - snakedwi
     singularity_opts: '-e'
     shadow: null
-    opts: '--filter-T1w desc=preproc space=T1w  --freesurfer_dir {dataset}/snakeanat/sourcedata/fastsurfer_surf --dwi_dir {dataset}/snakedwi/snakedwi --profile cc-slurm'
+    opts: '--filter-T1w desc=preproc space=T1w  --freesurfer_dir {dataset}/derivatives/snakeanat/sourcedata/fastsurfer_surf --dwi_dir {dataset}/snakedwi/snakedwi --profile cc-slurm'
     retain_subj_dirs_from: 
       - 'mrtrix'
       - 'labelmerge'

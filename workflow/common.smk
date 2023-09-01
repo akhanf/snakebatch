@@ -8,6 +8,7 @@ def get_targets():
                 targets.extend(
                     bids_intersect[dataset].expand(
                         Path(dataset)
+                        / "derivatives"
                         / Path(app)
                         / Path(bids(root=root, **subj_wildcards[dataset])).parent
                     )
@@ -63,6 +64,7 @@ def get_dependencies(app, dataset):
             for root_dir in config["apps"][dep]["retain_subj_dirs_from"]:
                 inputs.append(
                     Path(dataset)
+                    / "derivatives"
                     / dep
                     / Path(bids(root=root_dir, **subj_wildcards[dataset])).parent
                 )
