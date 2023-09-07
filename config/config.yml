@@ -106,7 +106,7 @@ apps:
     retain_subj_dirs_from:
       - 'hippunfold'
       - 'work' #remove this if --keep-work not used
-    input_to_filter: t1 #e.g. for --filter-dwi
+    input_to_filter: T1w  #must use the input name from the app
     resources:
       cores: 8
       mem_mb: 32000
@@ -123,7 +123,6 @@ apps:
       - ''
     retain_files: #relative to output folder
       - 'sub-{subject}.html'
-    input_to_filter: t1 #e.g. for --filter-dwi
     resources:
       cores: 8
       mem_mb: 32000
