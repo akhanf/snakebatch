@@ -97,7 +97,7 @@ def get_sb_singularity_opts(wildcards):
 
 
 def get_shadow(app):
-    return config["apps"][app].get("shadow", config.get("shadow", None))
+    return config["apps"][app].get("shadow", config['defaults'].get("shadow", None))
 
 
 def get_run_cmd(wildcards, input):
