@@ -19,10 +19,19 @@ def get_targets():
 
 def get_session_filter(wildcards):
     input_to_filter = config["apps"][wildcards.app]["input_to_filter"]
-    if "session" in wildcards._names:
-        return f"--filter-{input_to_filter} session={wildcards.session}"
+    if isinstance(input_to_filter,list):
+     
+        if "session" in wildcards._names:
+            return " ".join([f"--filter-{i} session={wildcards.session}" for i in input_to_filter])
+        else:
+            return ""
+        
     else:
-        return ""
+
+        if "session" in wildcards._names:
+            return f"--filter-{input_to_filter} session={wildcards.session}"
+        else:
+            return ""
 
 
 def get_bids_input(wildcards, input):
