@@ -139,10 +139,12 @@ for dataset in config["datasets"].keys():
                 singularity_opts=get_sb_singularity_opts,
                 session_filter=get_session_filter,
                 snakebids_opts=get_snakebids_opts,
-                bids=get_bids_input,
+                bids=get_bids_input, 
+                dryrun_touch=get_dryrun_touch,
+                dryrun_echo=get_dryrun_echo,
             output:
-                get_out_subj_dirs(app, dataset),
-                get_out_additional_files(app, dataset),
+                dirs=get_out_subj_dirs(app, dataset),
+                files=get_out_additional_files(app, dataset),
             log:
                 bids(root="logs/{dataset}_{app}", **subj_wildcards[dataset]),
             threads: 
@@ -161,8 +163,9 @@ for dataset in config["datasets"].keys():
             shadow:
                 get_shadow(app)
             shell:
-                "{params.run_cmd} {params.bids} {wildcards.dataset}/{wildcards.app}  participant "
+                "{params.dryrun_echo} {params.run_cmd} {params.bids} {wildcards.dataset}/{wildcards.app}  participant "
                 "--participant_label {wildcards.subject} {params.session_filter} "
                 "{params.snakebids_opts} "
                 "{params.app_opts} "
-                "{params.singularity_opts}"
+                "{params.singularity_opts} "
+                "{params.dryrun_touch}"

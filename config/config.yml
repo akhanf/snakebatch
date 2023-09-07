@@ -12,6 +12,9 @@ datasets:
 
 defaults:
 
+  dryrun: True #can be overriden in app -- DANGER - this can overwrite previously generated outputs! or rename what this is called.. not sure how useful this feature actually is in any case -- 
+  
+   
   pybids_inputs:  #can be overriden in the dataset
     dwi:
       filters:
@@ -78,7 +81,7 @@ apps:
       mem_mb: 32000
       runtime: 360 
       gpus: 1
-
+    dryrun: True
   snakeanat:
     snakebids: True
     url: 'http://github.com/akhanf/snakeanat'

@@ -116,3 +116,24 @@ def get_snakebids_opts(wildcards, input, threads):
         return ""
 
 
+
+def get_dryrun_echo(wildcards):
+    """adds echo before the run cmd if the dryrun is enabled"""
+    if config["apps"][wildcards.app].get("dryrun",config["defaults"].get("dryrun",False)):
+        return "echo"
+    else:
+        return ""
+
+def get_dryrun_touch(wildcards,output):
+    """ touch/mkdir outputs for dryrun"""
+    if config["apps"][wildcards.app].get("dryrun",config["defaults"].get("dryrun",False)):
+
+        cmds=[]
+        for f in output.files:
+            cmds.append(f"touch {f}")
+        for d in output.dirs:
+            cmds.append(f"mkdir -p {d}")
+        return " && "+" && ".join(cmds)
+    else:
+        return ""
+
