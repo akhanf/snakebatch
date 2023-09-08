@@ -166,7 +166,7 @@ for dataset in config["datasets"].keys():
             shadow:
                 get_shadow(app)
             shell:
-                "{params.run_cmd} {params.bids} {wildcards.dataset}/{wildcards.app}  participant "
+                "{params.run_cmd} {params.bids} {wildcards.dataset}/derivatives/{wildcards.app}  participant "
                 "--participant_label {wildcards.subject} {params.session_filter} "
                 "{params.snakebids_opts} "
                 "{params.app_opts} "
