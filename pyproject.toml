@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "snakebatch"
+version = "0.1.0"
+description = ""
+authors = ["Ali Khan <alik@robarts.ca>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+snakebids = "^0.9.2"
+snakeboost = "^0.3.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
