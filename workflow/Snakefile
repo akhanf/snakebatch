@@ -75,14 +75,19 @@ for dataset in config["datasets"].keys():
         """This function is used to select what files to retain, since the
         app is run on /tmp, and only files listed here will be copied over"""
 
+
+        #app overrided wildcards (eg to loop over subject only even if session exists):
+        wildcards = {wc:f'{{{wc}}}' for wc in config["apps"][app].get('wildcards',subj_wildcards[dataset].keys())}
+    
         out_subj_dirs = []
         for root_dir in config["apps"][app]["retain_subj_dirs_from"]:
             out_subj_dirs.append(
                 directory(
                     Path(f"{{dataset,{dataset}}}/derivatives/{{app,{app}}}")
-                    / Path(bids(root=root_dir, **subj_wildcards[dataset])).parent
+                    / Path(bids(root=root_dir, **wildcards)).parent
                 )
             )
+
         return out_subj_dirs
 
     def get_out_additional_files(app, dataset):
@@ -143,8 +148,8 @@ for dataset in config["datasets"].keys():
             output:
                 get_out_subj_dirs(app, dataset),
                 get_out_additional_files(app, dataset),
-            log:
-                bids(root="logs/{dataset}_{app}", **subj_wildcards[dataset]),
+#            log:
+#                bids(root="logs/{dataset}_{app}", **subj_wildcards[dataset]),
             threads: 
                 lambda wildcards: config["apps"][wildcards.app]["resources"].get(
                     "cores", config["defaults"]["resources"]["cores"])
