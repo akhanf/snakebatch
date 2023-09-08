@@ -5,7 +5,9 @@ from pathlib import Path
 
 configfile: workflow.source_path("../config/config.yml")
 
-include: 'common.smk'
+
+include: "common.smk"
+
 
 workflow._shadow_prefix = os.environ.get(
     config["defaults"].get("tmpdir_env", "TMPDIR"), None
@@ -20,7 +22,7 @@ wildcard_constraints:
     **snakebids.get_wildcard_constraints(config["defaults"].get("pybids_inputs")),
 
 
-#collect bids inputs for each dataset
+# collect bids inputs for each dataset
 inputs = dict()
 subj_wildcards = dict()
 bids_intersect = dict()
@@ -75,14 +77,23 @@ for dataset in config["datasets"].keys():
         """This function is used to select what files to retain, since the
         app is run on /tmp, and only files listed here will be copied over"""
 
+        # app overrided wildcards (eg to loop over subject only even if session exists):
+        wildcards = {
+            wc: f"{{{wc}}}"
+            for wc in config["apps"][app].get(
+                "wildcards", subj_wildcards[dataset].keys()
+            )
+        }
+
         out_subj_dirs = []
         for root_dir in config["apps"][app]["retain_subj_dirs_from"]:
             out_subj_dirs.append(
                 directory(
                     Path(f"{{dataset,{dataset}}}/derivatives/{{app,{app}}}")
-                    / Path(bids(root=root_dir, **subj_wildcards[dataset])).parent
+                    / Path(bids(root=root_dir, **wildcards)).parent
                 )
             )
+
         return out_subj_dirs
 
     def get_out_additional_files(app, dataset):
@@ -94,7 +105,9 @@ for dataset in config["datasets"].keys():
 
         out_files = []
         for f in config["apps"][app]["retain_files"]:
-            out_files.append(Path(f"{{dataset,{dataset}}}/derivatives/{{app,{app}}}") / f)
+            out_files.append(
+                Path(f"{{dataset,{dataset}}}/derivatives/{{app,{app}}}") / f
+            )
         return out_files
 
     rule:
@@ -103,11 +116,10 @@ for dataset in config["datasets"].keys():
         input:
             bids=lambda wildcards: config["datasets"][wildcards.dataset]["bids_dir"],
         output:
-            directory(f"{{dataset,{dataset}}}/bids")
+            directory(f"{{dataset,{dataset}}}/bids"),
         localrule: True
         shell:
             "ln -sv {input} {output}"
-
 
     for app in config["apps"].keys():
         if "container" in config["apps"][app].keys():
@@ -144,10 +156,8 @@ for dataset in config["datasets"].keys():
                 get_out_subj_dirs(app, dataset),
                 get_out_additional_files(app, dataset),
             log:
-                bids(root="logs/{dataset}_{app}", **subj_wildcards[dataset]),
-            threads: 
-                lambda wildcards: config["apps"][wildcards.app]["resources"].get(
-                    "cores", config["defaults"]["resources"]["cores"])
+                get_log_file(app, dataset),
+            threads: get_threads
             resources:
                 mem_mb=lambda wildcards: config["apps"][wildcards.app][
                     "resources"
@@ -161,7 +171,7 @@ for dataset in config["datasets"].keys():
             shadow:
                 get_shadow(app)
             shell:
-                "{params.run_cmd} {params.bids} {wildcards.dataset}/{wildcards.app}  participant "
+                "{params.run_cmd} {params.bids} {wildcards.dataset}/derivatives/{wildcards.app}  participant "
                 "--participant_label {wildcards.subject} {params.session_filter} "
                 "{params.snakebids_opts} "
                 "{params.app_opts} "
