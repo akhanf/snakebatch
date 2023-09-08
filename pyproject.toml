@@ -11,6 +11,9 @@ snakebids = "^0.9.2"
 snakeboost = "^0.3.0"
 
 
+[tool.poetry.group.dev.dependencies]
+snakefmt = "^0.8.4"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
