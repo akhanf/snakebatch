@@ -1,26 +1,46 @@
+def get_targets_by_app_dataset(app, dataset):
+    targets = list()
+
+    # app overrided wildcards (eg to loop over subject only even if session exists):
+    wildcards = {
+        wc: f"{{{wc}}}"
+        for wc in config["apps"][app].get("wildcards", subj_wildcards[dataset].keys())
+    }
+
+    for root in config["apps"][app]["retain_subj_dirs_from"]:
+        targets.extend(
+            bids_intersect[dataset].expand(
+                Path(dataset)
+                / "derivatives"
+                / Path(app)
+                / Path(bids(root=root, **wildcards)).parent
+            )
+        )
+
+    return targets
+
+
+def get_targets_by_dataset(dataset):
+    """final output files are of the form: {dataset}/{app}/{root_dir}/sub-{subject}/ses-{session}"""
+    targets = list()
+    for app in config["apps"].keys():
+        targets.extend(get_targets_by_app_dataset(app, dataset))
+    return targets
+
+
+def get_targets_by_app(app):
+    """final output files are of the form: {dataset}/{app}/{root_dir}/sub-{subject}/ses-{session}"""
+    targets = list()
+    for dataset in config["datasets"].keys():
+        targets.extend(get_targets_by_app_dataset(app, dataset))
+    return targets
+
+
 def get_targets():
     """final output files are of the form: {dataset}/{app}/{root_dir}/sub-{subject}/ses-{session}"""
     targets = list()
     for dataset in config["datasets"].keys():
-        for app in config["apps"].keys():
-            # app overrided wildcards (eg to loop over subject only even if session exists):
-            wildcards = {
-                wc: f"{{{wc}}}"
-                for wc in config["apps"][app].get(
-                    "wildcards", subj_wildcards[dataset].keys()
-                )
-            }
-
-            for root in config["apps"][app]["retain_subj_dirs_from"]:
-                targets.extend(
-                    bids_intersect[dataset].expand(
-                        Path(dataset)
-                        / "derivatives"
-                        / Path(app)
-                        / Path(bids(root=root, **wildcards)).parent
-                    )
-                )
-
+        targets.extend(get_targets_by_dataset(dataset))
     return targets
 
 

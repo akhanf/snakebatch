@@ -71,7 +71,22 @@ rule all:
         get_targets(),
 
 
+for app in config["apps"].keys():
+
+    rule:
+        name:
+            f"all_{app}"
+        input:
+            get_targets_by_app(app),
+
+
 for dataset in config["datasets"].keys():
+
+    rule:
+        name:
+            f"all_{dataset}"
+        input:
+            get_targets_by_dataset(dataset),
 
     def get_out_subj_dirs(app, dataset):
         """This function is used to select what files to retain, since the
@@ -122,6 +137,13 @@ for dataset in config["datasets"].keys():
             "ln -sv {input} {output}"
 
     for app in config["apps"].keys():
+
+        rule:
+            name:
+                f"all_{dataset}_{app}"
+            input:
+                get_targets_by_app_dataset(app, dataset),
+
         if "container" in config["apps"][app].keys():
 
             rule:
