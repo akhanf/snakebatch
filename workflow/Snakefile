@@ -28,9 +28,19 @@ subj_wildcards = dict()
 bids_intersect = dict()
 
 for dataset in config["datasets"].keys():
+
+    #create symlink to bids
+    dataset_path=Path(dataset)
+    if not dataset_path.exists():
+        dataset_path.mkdir(parents=True)
+    bids_path=dataset_path / 'bids'
+    if not bids_path.exists():
+        bids_path.symlink_to(config["datasets"][dataset]["bids_dir"])
+
+
     # parse bids dataset, using dataset input wildcards
     inputs[dataset] = snakebids.generate_inputs(
-        bids_dir=config["datasets"][dataset]["bids_dir"],
+        bids_dir=bids_path,
         pybids_inputs=config["datasets"][dataset].get(
             "pybids_inputs", config["defaults"].get("pybids_inputs", None)
         ),
@@ -124,17 +134,6 @@ for dataset in config["datasets"].keys():
                 Path(f"{{dataset,{dataset}}}/derivatives/{{app,{app}}}") / f
             )
         return out_files
-
-    rule:
-        name:
-            f"symlink_bids_{dataset}"
-        input:
-            bids=lambda wildcards: config["datasets"][wildcards.dataset]["bids_dir"],
-        output:
-            directory(f"{{dataset,{dataset}}}/bids"),
-        localrule: True
-        shell:
-            "ln -sv {input} {output}"
 
     for app in config["apps"].keys():
 
