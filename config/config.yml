@@ -1,7 +1,8 @@
 datasets:
   LOBE: 
     bids_dir: '/project/6050199/akhanf/cfmm-bids/data/Khan/LOBE/raw/baseline/bids'
-
+  HCP: 
+    bids_dir: '/project/6050199/ext-data/hcp_development/bids_LOBE_demog_matched_subset' 
 
 
 
@@ -102,10 +103,11 @@ apps:
   hippunfold:
     snakebids: True
     container: 'docker://khanlab/hippunfold:v1.3.3.sif'
-    opts: '--modality T1w --keep-work --generate-myelin-map'
+    opts: '--modality T1w --atlas bigbrain'
     retain_subj_dirs_from:
       - 'hippunfold'
-      - 'work' #remove this if --keep-work not used
+    retain_files: #relative to output folder
+      - 'work/sub-{subject}_work.tar.gz'
     input_to_filter: T1w  #must use the input name from the app
     resources:
       cores: 8
@@ -118,7 +120,7 @@ apps:
     depends_on:
       - snakeanat
     singularity_opts: '-e'
-    opts: '--fs-subjects-dir {dataset}/derivatives/snakeanat/sourcedata/fastsurfer_surf'
+    opts: '--skip_bids_validation --fs-subjects-dir {dataset}/derivatives/snakeanat/sourcedata/fastsurfer_surf'
     retain_subj_dirs_from: 
       - ''
     retain_files: #relative to output folder
@@ -129,26 +131,26 @@ apps:
       runtime: 360 
       gpus: 0
 
-  scattr:
-    bids_dir: '{dataset}/derivatives/snakeanat'
-    snakebids: True
-    url: 'http://github.com/akhanf/scattr'
-    tag: 'new-snakedwi'
-    runscript: 'scattr/run.py' #relative to the app repo
-    depends_on:
-      - snakeanat
-      - snakedwi
-    singularity_opts: '-e'
-    shadow: null
-    opts: '--filter-T1w desc=preproc space=T1w  --freesurfer_dir {dataset}/derivatives/snakeanat/sourcedata/fastsurfer_surf --dwi_dir {dataset}/snakedwi/snakedwi --profile cc-slurm'
-    retain_subj_dirs_from: 
-      - 'mrtrix'
-      - 'labelmerge'
-    input_to_filter: dwi #e.g. for --filter-dwi
-    resources:
-      cores: 1
-      mem_mb: 4000
-      runtime: 1440
-      gpus: 0
+#  scattr:
+#    bids_dir: '{dataset}/derivatives/snakeanat'
+#    snakebids: True
+#    url: 'http://github.com/akhanf/scattr'
+#    tag: 'new-snakedwi'
+#    runscript: 'scattr/run.py' #relative to the app repo
+#    depends_on:
+#      - snakeanat
+#      - snakedwi
+#    singularity_opts: '-e'
+#    shadow: null
+#    opts: '--filter-T1w desc=preproc space=T1w  --freesurfer_dir {dataset}/derivatives/snakeanat/sourcedata/fastsurfer_surf --dwi_dir {dataset}/snakedwi/snakedwi --profile cc-slurm'
+#    retain_subj_dirs_from: 
+#      - 'mrtrix'
+#      - 'labelmerge'
+#    input_to_filter: dwi #e.g. for --filter-dwi
+#    resources:
+#      cores: 1
+#      mem_mb: 4000
+#      runtime: 1440
+#      gpus: 0
 
 
