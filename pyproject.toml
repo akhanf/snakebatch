@@ -10,6 +10,7 @@ python = ">=3.8,<3.12"
 snakemake = ">=7.20,<8"
 snakebids = ">=0.11.2"
 pulp = "<2.8.0"
+attrs = "23.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
