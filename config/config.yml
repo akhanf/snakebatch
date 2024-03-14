@@ -36,6 +36,19 @@ defaults:
         - acquisition
         - run
 
+    bold:
+      filters:
+        suffix: 'bold'
+        extension: '.nii.gz'
+        datatype: 'func'
+        task: 'rest'
+      wildcards:
+        - subject
+        - session
+        - acquisition
+        - run
+
+
 
   #this configures the options to save the BIDSLayout
   # by default, database is not saved (uncomment to save)
@@ -80,6 +93,22 @@ apps:
       runtime: 360 
       gpus: 1
 
+  freesurfer:
+    snakebids: True
+    url: 'http://github.com/akhanf/freesurfer_bidsapp'
+    tag: 'main'
+    runscript: 'freesurfer_bidsapp/run.py' #relative to the app repo
+    opts: '--use-singularity'
+    retain_subj_dirs_from:
+      - 'freesurfer'
+    input_to_filter: t1 #e.g. for --filter-dwi
+    resources:
+      cores: 8
+      mem_mb: 16000
+      runtime: 1440
+      gpus: 0
+
+
   snakeanat:
     snakebids: True
     url: 'http://github.com/akhanf/snakeanat'
@@ -118,9 +147,9 @@ apps:
   fmriprep:
     container: '/project/6050199/akhanf/singularity/bids-apps/nipreps_fmriprep_23.1.0.sif'
     depends_on:
-      - snakeanat
+      - freesurfer
     singularity_opts: '-e'
-    opts: '--skip_bids_validation --fs-subjects-dir {dataset}/derivatives/snakeanat/sourcedata/fastsurfer_surf'
+    opts: '--skip_bids_validation --fs-subjects-dir {dataset}/derivatives/freesurfer/freesurfer'
     retain_subj_dirs_from: 
       - ''
     retain_files: #relative to output folder
