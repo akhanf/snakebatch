@@ -135,6 +135,17 @@ def get_sb_singularity_opts(wildcards):
 def get_shadow(app):
     return config["apps"][app].get("shadow", config["defaults"].get("shadow", None))
 
+def get_runscript(app):
+    # runscript could be inside the container, in the cloned repo, or in the local filesystem
+    #  - if it is in the container then it doesn't have to be in inputs, but otherwise it does (for shadow to symlink it)
+    if "runscript" in config["apps"][app].keys():
+        if "url" in config["apps"][app].keys():
+            return {"runscript": f"resources/repos/{app}/{config['apps'][app]['runscript']}" }
+        else:
+            if Path(config["apps"][app]["runscript"]).exists():
+                return {"runscript": config["apps"][app]["runscript"]}
+    else: 
+        return {}
 
 def get_run_cmd(wildcards, input):
     if "url" in config["apps"][wildcards.app].keys():
@@ -155,7 +166,7 @@ def get_run_cmd(wildcards, input):
 def get_snakebids_opts(wildcards, input, threads):
     if config["apps"][wildcards.app].get("snakebids", False):
         return (
-            f"-p --force-output --cores {threads} --pybidsdb-dir {input.bids}/.pybids"
+            f"-p --force-output --cores {threads}"
         )
     else:
         return ""
