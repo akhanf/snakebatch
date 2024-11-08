@@ -19,8 +19,7 @@ workflow._default_resources.tmpdir = os.environ.get(
 
 # this adds constraints to the bids naming (not really required for this workflow as is)
 wildcard_constraints:
-    **snakebids.get_wildcard_constraints(config["defaults"].get("pybids_inputs")),
-
+    subject='[0-9a-zA-Z]+'
 
 # collect bids inputs for each dataset
 inputs = dict()
