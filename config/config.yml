@@ -112,7 +112,7 @@ apps:
   snakeanat:
     snakebids: True
     url: 'http://github.com/akhanf/snakeanat'
-    tag: 'updates'
+    tag: 'refactor'
     runscript: 'snakeanat/run.py' #relative to the app repo
     opts: '--use-envmodules'
     retain_subj_dirs_from:
