@@ -166,7 +166,7 @@ def get_run_cmd(wildcards, input):
 def get_snakebids_opts(wildcards, input, threads):
     if config["apps"][wildcards.app].get("snakebids", False):
         return (
-            f"-p --force-output --cores {threads}"
+            f"-p --force-output --cores {threads} " #--pybidsdb-dir {input.bids}/.pybids"
         )
     else:
         return ""

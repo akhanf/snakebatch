@@ -1,5 +1,4 @@
-import snakebids
-from snakebids import bids
+from snakebids import bids, generate_inputs
 from pathlib import Path
 
 
@@ -18,8 +17,9 @@ workflow._default_resources.tmpdir = os.environ.get(
 
 
 # this adds constraints to the bids naming (not really required for this workflow as is)
-wildcard_constraints:
-    subject='[0-9a-zA-Z]+'
+#wildcard_constraints:
+#    **snakebids.get_wildcard_constraints(config["defaults"].get("pybids_inputs")),
+
 
 # collect bids inputs for each dataset
 inputs = dict()
@@ -38,7 +38,7 @@ for dataset in config["datasets"].keys():
 
 
     # parse bids dataset, using dataset input wildcards
-    inputs[dataset] = snakebids.generate_inputs(
+    inputs[dataset] = generate_inputs(
         bids_dir=bids_path,
         pybids_inputs=config["datasets"][dataset].get(
             "pybids_inputs", config["defaults"].get("pybids_inputs", None)
