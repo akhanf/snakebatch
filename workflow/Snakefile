@@ -162,6 +162,7 @@ for dataset in config["datasets"].keys():
                 **get_dependencies(app, dataset),
                 **get_sb_repo(app),
                 **get_sb_container(app),
+                **get_runscript(app),
                 bids="{dataset}/bids",
             params:
                 run_cmd=get_run_cmd,
