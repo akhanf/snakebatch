@@ -1,25 +1,14 @@
 import snakebids
 from snakebids import bids
 from pathlib import Path
-
+from snakemake.utils import format
 
 configfile: workflow.source_path("../config/config.yml")
 
 
-include: "common.smk"
+#include: "common.smk"
 
 
-workflow._shadow_prefix = os.environ.get(
-    config["defaults"].get("tmpdir_env", "TMPDIR"), None
-)
-workflow._default_resources.tmpdir = os.environ.get(
-    config["defaults"].get("tmpdir_env", "TMPDIR"), None
-)
-
-
-# this adds constraints to the bids naming (not really required for this workflow as is)
-wildcard_constraints:
-    subject='[0-9a-zA-Z]+'
 
 # collect bids inputs for each dataset
 inputs = dict()
@@ -75,125 +64,100 @@ for dataset in config["datasets"].keys():
             )
 
 
+from query_configs import load_app_config
+
+# Repository URL for app configurations
+repo_url = 'resources/bids-apps-configs'
+
+
+# Dynamically load app configurations
+apps_to_run = config["apps_to_run"]
+print(apps_to_run)
+app_configs = {app:load_app_config(repo_url, appinfo['name'], appinfo['version']) for app,appinfo in apps_to_run.items()}
+
+print(app_configs)
+
+
+datasets=['ds005602']
+
 rule all:
     input:
-        get_targets(),
+        bids_intersect[dataset].expand(
+            bids(root='{dataset}/derivatives/{app}', 
+                suffix='out.zip',
+                **bids_intersect[dataset].input_wildcards),
+            app=apps_to_run.keys(),dataset=config['datasets'].keys())
 
 
-for app in config["apps"].keys():
-
-    rule:
-        name:
-            f"all_{app}"
-        input:
-            get_targets_by_app(app),
 
 
 for dataset in config["datasets"].keys():
 
-    rule:
-        name:
-            f"all_{dataset}"
-        input:
-            get_targets_by_dataset(dataset),
 
-    def get_out_subj_dirs(app, dataset):
-        """This function is used to select what files to retain, since the
-        app is run on /tmp, and only files listed here will be copied over"""
+    for app in apps_to_run.keys():
 
-        # app overrided wildcards (eg to loop over subject only even if session exists):
-        wildcards = {
-            wc: f"{{{wc}}}"
-            for wc in config["apps"][app].get(
-                "wildcards", subj_wildcards[dataset].keys()
-            )
-        }
 
-        out_subj_dirs = []
-        for root_dir in config["apps"][app]["retain_subj_dirs_from"]:
-            out_subj_dirs.append(
-                directory(
-                    Path(f"{{dataset,{dataset}}}/derivatives/{{app,{app}}}")
-                    / Path(bids(root=root_dir, **wildcards)).parent
-                )
-            )
-
-        return out_subj_dirs
-
-    def get_out_additional_files(app, dataset):
-        """This function is used to select what files to retain, since when the
-        app is run in shadow, only files listed here will be copied over"""
-
-        if "retain_files" not in config["apps"][app]:
-            return []
-
-        out_files = []
-        for f in config["apps"][app]["retain_files"]:
-            out_files.append(
-                Path(f"{{dataset,{dataset}}}/derivatives/{{app,{app}}}") / f
-            )
-        return out_files
-
-    for app in config["apps"].keys():
-
-        rule:
-            name:
-                f"all_{dataset}_{app}"
-            input:
-                get_targets_by_app_dataset(app, dataset),
-
-        if "container" in config["apps"][app].keys():
+        if "container" in app_configs[app].keys():
 
             rule:
                 name:
                     f"get_container_{app}"
                 container:
-                    config["apps"][app]["container"]
+                    app_configs[app]['container']
                 output:
                     f"resources/containers/{app}.sif",
                 localrule: True
                 shell:
                     "ln -sv $SINGULARITY_CONTAINER {output}"
 
+        if 'container' in app_configs[app]:
+            rule:
+                name:
+                    f"{dataset}_{app}"
+                input:
+                    bids="{dataset}/bids",
+                    container="resources/containers/{app}.sif",
+                params:
+                    default_opts = app_configs[app]['default_opts'],
+                    args=lambda wildcards, input, output: format(apps_to_run[app]['args']),
+                    analysis_level=app_configs[app]['analysis_level']
+
+                output:
+                    zipfile=bids(root=f'{{dataset,{dataset}}}/derivatives/{{app,{app}}}',
+                                    suffix='out.zip',
+                                    **bids_intersect[dataset].input_wildcards)
+                script:
+                    "scripts/container_runscript.py"
+
+        else:
+            rule:
+                name:
+                    f"{dataset}_{app}"
+                input:
+                    bids="{dataset}/bids",
+                params:
+                    app_args=lambda wildcards, input, output: format(apps_to_run[wildcards.app]['args'])
+                output:
+                    bids(root=f'{{dataset,{dataset}}}/derivatives/{{app,{app}}}',
+                                    suffix='out.zip',
+                                    **bids_intersect[dataset].input_wildcards)
+                shell:
+                    "resources/snakebids_runscript.sh {params.app_args}"
+
+        
+        #add rule for combining zip files
         rule:
             name:
-                f"{dataset}_{app}"
+                f"{dataset}_{app}_combine"
             input:
-                **get_dependencies(app, dataset),
-                **get_sb_repo(app),
-                **get_sb_container(app),
-                **get_runscript(app),
-                bids="{dataset}/bids",
-            params:
-                run_cmd=get_run_cmd,
-                app_opts=lambda wildcards: config["apps"][wildcards.app][
-                    "opts"
-                ].format(**wildcards),
-                singularity_opts=get_sb_singularity_opts,
-                session_filter=get_session_filter,
-                snakebids_opts=get_snakebids_opts,
-                bids=get_bids_input,
+                bids_intersect[dataset].expand(
+                    bids(root=f'{dataset}/derivatives/{app}', 
+                    suffix='out.zip',
+                    **bids_intersect[dataset].input_wildcards))
             output:
-                get_out_subj_dirs(app, dataset),
-                get_out_additional_files(app, dataset),
-            log:
-                get_log_file(app, dataset),
-            threads: get_threads
-            resources:
-                mem_mb=lambda wildcards: config["apps"][wildcards.app][
-                    "resources"
-                ].get("mem_mb", config["defaults"]["resources"]["mem_mb"]),
-                runtime=lambda wildcards: config["apps"][wildcards.app][
-                    "resources"
-                ].get("runtime", config["defaults"]["resources"]["runtime"]),
-                gpus=lambda wildcards: config["apps"][wildcards.app]["resources"].get(
-                    "gpus", config["defaults"]["resources"]["gpus"]
-                ),
-            shadow:
-                get_shadow(app)
-            shell:
-                "{params.run_cmd} {params.bids} {wildcards.dataset}/derivatives/{wildcards.app}  participant "
-                "--participant_label {wildcards.subject} {params.session_filter} "
-                "{params.snakebids_opts} "
-                "{params.app_opts} "
-                "{params.singularity_opts}"
+                zipfile=f'{{dataset,{dataset}}}/derivatives/{{app,{app}}}/{{dataset}}_{{app}}.zip',
+            script:
+                "scripts/merge_zip.py"
+
+
+

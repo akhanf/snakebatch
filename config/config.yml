@@ -1,9 +1,6 @@
 datasets:
-  LOBE: 
-    bids_dir: '/project/6050199/akhanf/cfmm-bids/data/Khan/LOBE/raw/baseline/bids'
-  HCP: 
-    bids_dir: '/project/6050199/ext-data/hcp_development/bids_LOBE_demog_matched_subset' 
-
+  ds005602: 
+    bids_dir: '/localscratch/ds005602'
 
 
 #this configures the pybids grabber - create an entry for each type of input you want to grab
@@ -13,28 +10,27 @@ datasets:
 
 defaults:
 
+
   pybids_inputs:  #can be overriden in the dataset
-    dwi:
-      filters:
-        suffix: 'dwi'
-        extension: '.nii.gz'
-        datatype: 'dwi'
-      wildcards:
-        - subject
-        - session
-        - acquisition
-        - run
-        - direction
     t1:
       filters:
         suffix: 'T1w'
         extension: '.nii.gz'
         datatype: 'anat'
+        subject: 
+          - '1'
+          - '11'
+          - '12'
+          - '13'
+          - '14'
+          - '15'
+          
       wildcards:
         - subject
         - session
         - acquisition
         - run
+
 
 
   #this configures the options to save the BIDSLayout
@@ -46,7 +42,7 @@ defaults:
 
   derivatives: False #will search in bids/derivatives if True; can also be path(s) to derivatives datasets - can be overriden in datasets
 
-  singularity_prefix: '/project/6050199/akhanf/singularity/snakemake_containers' #can be overriden in apps
+  singularity_prefix: '/cifs/khan/shared/containers/snakemake_containers/' #'/project/6050199/akhanf/singularity/snakemake_containers' #can be overriden in apps
 
   resources:  # can be overriden in apps
     cores: 8
@@ -56,80 +52,22 @@ defaults:
     gpus: 0
 
   tmpdir_env: SLURM_TMPDIR  
-  shadow: 'minimal'
-
 
 
 
 # app options below:
 
-apps:
+apps_to_run:
   snakedwi:
-    snakebids: True
-    url: 'http://github.com/akhanf/snakedwi'
-    tag: 'v0.2.0-alpha'
-    runscript: 'snakedwi/run.py' #relative to the app repo
-    opts: ''
-    retain_subj_dirs_from:
-      - 'snakedwi'
-    input_to_filter: dwi #e.g. for --filter-dw
-    singularity_opts: '--nv'
-    resources:
-      cores: 8
-      mem_mb: 32000
-      runtime: 360 
-      gpus: 1
-
-  snakeanat:
-    snakebids: True
-    url: 'http://github.com/akhanf/snakeanat'
-    tag: 'updates'
-    runscript: 'snakeanat/run.py' #relative to the app repo
-    opts: '--use-envmodules'
-    retain_subj_dirs_from:
-      - ''
-      - 'sourcedata/ciftify'
-      - 'sourcedata/fastsurfer'
-      - 'sourcedata/fastsurfer_surf'
-      - 'qc'
-    input_to_filter: t1 #e.g. for --filter-dwi
-    resources:
-      cores: 8
-      mem_mb: 16000
-      runtime: 720
-      gpus: 0
-
+    name: snakedwi
+    version: v0.2.0-alpha
+    args: "{input} {output} participant"
 
   hippunfold:
-    snakebids: True
-    container: 'docker://khanlab/hippunfold:v1.3.3.sif'
-    opts: '--modality T1w --atlas bigbrain'
-    retain_subj_dirs_from:
-      - 'hippunfold'
-    retain_files: #relative to output folder
-      - 'work/sub-{subject}_work.tar.gz'
-    input_to_filter: T1w  #must use the input name from the app
-    resources:
-      cores: 8
-      mem_mb: 32000
-      runtime: 360 
-      gpus: 0
+    name: hippunfold
+    version: 'v1.4.1'
+    args: ""
 
-  fmriprep:
-    container: '/project/6050199/akhanf/singularity/bids-apps/nipreps_fmriprep_23.1.0.sif'
-    depends_on:
-      - snakeanat
-    singularity_opts: '-e'
-    opts: '--skip_bids_validation --fs-subjects-dir {dataset}/derivatives/snakeanat/sourcedata/fastsurfer_surf'
-    retain_subj_dirs_from: 
-      - ''
-    retain_files: #relative to output folder
-      - 'sub-{subject}.html'
-    resources:
-      cores: 8
-      mem_mb: 32000
-      runtime: 360 
-      gpus: 0
 
 #  scattr:
 #    bids_dir: '{dataset}/derivatives/snakeanat'

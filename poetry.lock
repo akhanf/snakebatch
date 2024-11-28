@@ -330,6 +330,7 @@ files = [
 ]
 
 [[package]]
+<<<<<<< Updated upstream
 name = "cookiecutter"
 version = "2.3.0"
 description = "A command-line utility that creates projects from project templates, e.g. creating a Python package project from a Python package project template."
@@ -350,6 +351,34 @@ python-slugify = ">=4.0.0"
 pyyaml = ">=5.3.1"
 requests = ">=2.23.0"
 rich = "*"
+=======
+name = "copier"
+version = "9.3.1"
+description = "A library for rendering project templates."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "copier-9.3.1-py3-none-any.whl", hash = "sha256:20d60383a3fb99054ea4d24a8f71c6f9219b40ac50db1d97d412583d739bce99"},
+    {file = "copier-9.3.1.tar.gz", hash = "sha256:e8515c082149f771268e8bc7fe400891d96e765797f5dac9fbae191f6427a24c"},
+]
+
+[package.dependencies]
+colorama = ">=0.4.6"
+dunamai = ">=1.7.0"
+eval-type-backport = {version = ">=0.1.3,<0.3.0", markers = "python_version < \"3.10\""}
+funcy = ">=1.17"
+jinja2 = ">=3.1.4"
+jinja2-ansible-filters = ">=1.3.1"
+packaging = ">=23.0"
+pathspec = ">=0.9.0"
+plumbum = ">=1.6.9"
+pydantic = ">=2.4.2"
+pygments = ">=2.7.1"
+pyyaml = ">=5.3.1"
+questionary = ">=1.8.1"
+typing-extensions = {version = ">=3.7.4,<5.0.0", markers = "python_version < \"3.9\""}
+>>>>>>> Stashed changes
 
 [[package]]
 name = "datrie"
@@ -422,15 +451,48 @@ files = [
 ]
 
 [[package]]
+<<<<<<< Updated upstream
+=======
+name = "dunamai"
+version = "1.19.2"
+description = "Dynamic version generation"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "dunamai-1.19.2-py3-none-any.whl", hash = "sha256:bc126b17571a44d68ed826cec596e0f61dc01edca8b21486f70014936a5d44f2"},
+    {file = "dunamai-1.19.2.tar.gz", hash = "sha256:3be4049890763e19b8df1d52960dbea60b3e263eb0c96144a677ae0633734d2e"},
+]
+
+[package.dependencies]
+packaging = ">=20.9"
+
+[[package]]
+name = "eval-type-backport"
+version = "0.2.0"
+description = "Like `typing._eval_type`, but lets older Python versions use newer typing features."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "eval_type_backport-0.2.0-py3-none-any.whl", hash = "sha256:ac2f73d30d40c5a30a80b8739a789d6bb5e49fdffa66d7912667e2015d9c9933"},
+    {file = "eval_type_backport-0.2.0.tar.gz", hash = "sha256:68796cfbc7371ebf923f03bdf7bef415f3ec098aeced24e054b253a0e78f7b37"},
+]
+
+[package.extras]
+tests = ["pytest"]
+
+[[package]]
+>>>>>>> Stashed changes
 name = "exceptiongroup"
-version = "1.1.3"
+version = "1.2.2"
 description = "Backport of PEP 654 (exception groups)"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "exceptiongroup-1.1.3-py3-none-any.whl", hash = "sha256:343280667a4585d195ca1cf9cef84a4e178c4b6cf2274caef9859782b567d5e3"},
-    {file = "exceptiongroup-1.1.3.tar.gz", hash = "sha256:097acd85d473d75af5bb98e41b61ff7fe35efe6675e4f9370ec6ec5126d160e9"},
+    {file = "exceptiongroup-1.2.2-py3-none-any.whl", hash = "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b"},
+    {file = "exceptiongroup-1.2.2.tar.gz", hash = "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc"},
 ]
 
 [package.extras]
@@ -656,14 +718,14 @@ files = [
 
 [[package]]
 name = "jinja2"
-version = "3.1.2"
+version = "3.1.4"
 description = "A very fast and expressive template engine."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "Jinja2-3.1.2-py3-none-any.whl", hash = "sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61"},
-    {file = "Jinja2-3.1.2.tar.gz", hash = "sha256:31351a702a408a9e7595a8fc6150fc3f43bb6bf7e319770cbc0db9df9437e852"},
+    {file = "jinja2-3.1.4-py3-none-any.whl", hash = "sha256:bc5dd2abb727a5319567b7a813e6a2e7318c39f4f487cfe6c89c6f9c7d25197d"},
+    {file = "jinja2-3.1.4.tar.gz", hash = "sha256:4a3aee7acbbe7303aede8e9648d13b8bf88a429282aa6122a993f0ac800cb369"},
 ]
 
 [package.dependencies]
@@ -1437,6 +1499,24 @@ files = [
 ]
 
 [[package]]
+<<<<<<< Updated upstream
+=======
+name = "questionary"
+version = "2.0.1"
+description = "Python library to build pretty command line user prompts ⭐️"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "questionary-2.0.1-py3-none-any.whl", hash = "sha256:8ab9a01d0b91b68444dff7f6652c1e754105533f083cbe27597c8110ecc230a2"},
+    {file = "questionary-2.0.1.tar.gz", hash = "sha256:bcce898bf3dbb446ff62830c86c5c6fb9a22a54146f0f5597d3da43b10d8fc8b"},
+]
+
+[package.dependencies]
+prompt_toolkit = ">=2.0,<=3.0.36"
+
+[[package]]
+>>>>>>> Stashed changes
 name = "requests"
 version = "2.31.0"
 description = "Python HTTP for Humans."
@@ -1671,6 +1751,7 @@ files = [
 
 [[package]]
 name = "snakebids"
+<<<<<<< Updated upstream
 version = "0.9.2"
 description = "BIDS integration into snakemake workflows"
 category = "main"
@@ -1695,6 +1776,45 @@ pybids = {version = ">=0.16.0,<0.17.0", markers = "python_version >= \"3.8\""}
 PyYAML = ">=6,<7"
 scipy = {version = ">=1.9.2", markers = "python_version >= \"3.8\""}
 snakemake = {version = ">=5.28.0", markers = "python_version >= \"3.7\""}
+=======
+version = "0.13.1"
+description = "BIDS integration into snakemake workflows"
+category = "main"
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "snakebids-0.13.1-py3-none-any.whl", hash = "sha256:3c68251d54e0615c3bdbf5b8050c0c0a3a58b9789a44c5e1bf75b3ec310cd7a5"},
+    {file = "snakebids-0.13.1.tar.gz", hash = "sha256:97395a8dfe225e1a15f66dd3562e07afa48370318cba932f0b375f860ff9c2c4"},
+]
+
+[package.dependencies]
+attrs = ">=22.2.0"
+boutiques = ">=0.5.25,<0.6.0"
+copier = ">=9.2.0"
+docutils = "!=0.21.post1"
+importlib-resources = ">=5.12.0"
+jinja2-time = ">=0.2.0"
+lazy-loader = ">=0.3"
+more-itertools = ">=8"
+numpy = [
+    {version = "<=1.24.4", markers = "python_version < \"3.9\""},
+    {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
+]
+pandas = {version = "<=2.0.3", markers = "python_version < \"3.9\""}
+pluggy = ">=1.3"
+pvandyken-deprecated = "0.0.4"
+pybids = ">=0.16.0,<0.17"
+requests = ">=2.31.0"
+ruamel-yaml = ">=0.17.2"
+scipy = [
+    {version = ">=1.10.0,<=1.10.1", markers = "python_version < \"3.9\""},
+    {version = ">=1.10.0", markers = "python_version >= \"3.9\""},
+]
+snakemake = [
+    {version = ">=5.28.0,<8", markers = "python_version < \"3.11\""},
+    {version = ">=7.18.2", markers = "python_version >= \"3.11\""},
+]
+>>>>>>> Stashed changes
 typing-extensions = ">=3.10.0"
 
 [[package]]
@@ -1734,13 +1854,13 @@ toml = ">=0.10.2,<0.11.0"
 
 [[package]]
 name = "snakemake"
-version = "7.32.3"
+version = "7.32.4"
 description = "Workflow management system to create reproducible and scalable data analyses"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "snakemake-7.32.3.tar.gz", hash = "sha256:cbe586fe28349982307f008ca40e839d569cf5d540008b0c91ebfef689b49b18"},
+    {file = "snakemake-7.32.4.tar.gz", hash = "sha256:fdc3f15dd7b06fabb7da30d460e0a3b1fba08e4ea91f9c32c47a83705cdc7b6e"},
 ]
 
 [package.dependencies]
@@ -1951,14 +2071,14 @@ files = [
 
 [[package]]
 name = "tomli"
-version = "2.0.1"
+version = "2.1.0"
 description = "A lil' TOML parser"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
-    {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
+    {file = "tomli-2.1.0-py3-none-any.whl", hash = "sha256:a5c57c3d1c56f5ccdf89f6523458f60ef716e210fc47c4cfb188c5ba473e0391"},
+    {file = "tomli-2.1.0.tar.gz", hash = "sha256:3f646cae2aec94e17d04973e4249548320197cfabdf130015d023de4b74d8ab8"},
 ]
 
 [[package]]
@@ -2135,21 +2255,30 @@ pyyaml = ">=6.0,<7.0"
 
 [[package]]
 name = "zipp"
-version = "3.16.2"
+version = "3.20.2"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "zipp-3.16.2-py3-none-any.whl", hash = "sha256:679e51dd4403591b2d6838a48de3d283f3d188412a9782faadf845f298736ba0"},
-    {file = "zipp-3.16.2.tar.gz", hash = "sha256:ebc15946aa78bd63458992fc81ec3b6f7b1e92d51c35e6de1c3804e73b799147"},
+    {file = "zipp-3.20.2-py3-none-any.whl", hash = "sha256:a817ac80d6cf4b23bf7f2828b7cabf326f15a001bea8b1f9b49631780ba28350"},
+    {file = "zipp-3.20.2.tar.gz", hash = "sha256:bc9eb26f4506fda01b81bcde0ca78103b6e62f991b381fec825435c836edbc29"},
 ]
 
 [package.extras]
-docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
-testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy (>=0.9.1)", "pytest-ruff"]
+check = ["pytest-checkdocs (>=2.4)", "pytest-ruff (>=0.2.1)"]
+cover = ["pytest-cov"]
+doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
+enabler = ["pytest-enabler (>=2.2)"]
+test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-ignore-flaky"]
+type = ["pytest-mypy"]
 
 [metadata]
 lock-version = "2.0"
+<<<<<<< Updated upstream
 python-versions = ">=3.9,<3.11"
 content-hash = "17db1b63e7258f7d34e305172c65d0239a2113e0c5e379922a7e5c8731c9fae4"
+=======
+python-versions = ">=3.8,<3.12"
+content-hash = "d06f600af8e7f19e170aed0a8120667b78a10e844d5193e3502ac4bbed5f5df0"
+>>>>>>> Stashed changes
