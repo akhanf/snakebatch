@@ -1,6 +1,4 @@
-name: snakedwi
-version: v0.2.0-alpha
-args: "{input} {output} participant"
+name: snakedwi_v0.2.0-alpha
 url: 'http://github.com/akhanf/snakedwi'
 tag: 'v0.2.0-alpha'
 runscript: 'snakedwi/run.py' #relative to the app repo

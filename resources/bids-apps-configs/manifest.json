@@ -1,18 +1,15 @@
 {
   "apps": [
     {
-      "name": "snakedwi",
-      "version": "v0.2.0-alpha",
+      "name": "snakedwi_v0.2.0-alpha",
       "path": "apps/snakedwi/snakedwi_v0.2.0-alpha.yaml"
     },
     {
-      "name": "hippunfold",
-      "version": "v1.3.3",
+      "name": "hippunfold_v1.3.3",
       "path": "apps/hippunfold/hippunfold_v1.3.3.yaml"
     },
     {
-      "name": "hippunfold",
-      "version": "v1.4.1",
+      "name": "hippunfold_v1.4.1",
       "path": "apps/hippunfold/hippunfold_v1.4.1.yaml"
     }
 

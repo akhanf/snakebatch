@@ -1,5 +1,4 @@
-name: hippunfold
-version: v1.4.1
+name: hippunfold_v1.4.1
 container: '/srv/containers/hippunfold_v1.4.1.sif'
 analysis_level: participant
 default_opts: '--modality T1w --atlas bigbrain -c all --until import_t1'
@@ -9,5 +8,4 @@ resources:
   mem_mb: 32000
   runtime: 360 
   gpus: 0
-args: "{input} {output} participant"
 

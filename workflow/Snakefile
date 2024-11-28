@@ -1,163 +1,141 @@
 import snakebids
-from snakebids import bids
+from snakebids import bids, generate_inputs
 from pathlib import Path
 from snakemake.utils import format
 
-configfile: workflow.source_path("../config/config.yml")
+#configfile: workflow.source_path("../config/config.yml")
+
+configfile: 'config/snakebids.yml'
+
+# Get input wildcards
+inputs = generate_inputs(
+    bids_dir=config["bids_dir"],
+    pybids_inputs=config["pybids_inputs"],
+    pybidsdb_dir=config.get("pybidsdb_dir"),
+    pybidsdb_reset=config.get("pybidsdb_reset"),
+    derivatives=config.get("derivatives", None),
+    participant_label=config.get("participant_label", None),
+    exclude_participant_label=config.get("exclude_participant_label", None),
+    validate=not config.get("plugins.validator.skip", False)
+)
 
 
-#include: "common.smk"
+bids_dir=config['bids_dir']
 
+subj_wildcards = inputs.subj_wildcards
 
+# get the subjects that have all the bids components (e.g. both t1 and dwi)
+#   we do this by getting the first component, and then filtering with the entities of each additional one..
+comps = list(inputs.keys())
+bids_intersect = inputs[comps[0]]
 
-# collect bids inputs for each dataset
-inputs = dict()
-subj_wildcards = dict()
-bids_intersect = dict()
-
-for dataset in config["datasets"].keys():
-
-    #create symlink to bids
-    dataset_path=Path(dataset)
-    if not dataset_path.exists():
-        dataset_path.mkdir(parents=True)
-    bids_path=dataset_path / 'bids'
-    if not bids_path.exists():
-        bids_path.symlink_to(config["datasets"][dataset]["bids_dir"])
-
-
-    # parse bids dataset, using dataset input wildcards
-    inputs[dataset] = snakebids.generate_inputs(
-        bids_dir=bids_path,
-        pybids_inputs=config["datasets"][dataset].get(
-            "pybids_inputs", config["defaults"].get("pybids_inputs", None)
-        ),
-        pybidsdb_dir=config["datasets"][dataset].get(
-            "pybids_db_dir", config["defaults"].get("pybids_db_dir", None)
-        ),
-        pybidsdb_reset=config["datasets"][dataset].get(
-            "pybids_db_reset", config["defaults"].get("pybids_db_reset", None)
-        ),
-        derivatives=config["datasets"][dataset].get(
-            "derivatives", config["defaults"].get("derivatives", None)
-        ),
-        participant_label=config["datasets"][dataset].get(
-            "participant_label", config["defaults"].get("participant_label", None)
-        ),
-        exclude_participant_label=config["datasets"][dataset].get(
-            "exclude_participant_label",
-            config["defaults"].get("exclude_participant_label", None),
-        ),
-    )
-
-    subj_wildcards[dataset] = inputs[dataset].subj_wildcards
-
-    # get the subjects that have all the bids components (e.g. both t1 and dwi)
-    #   we do this by getting the first component, and then filtering with the entities of each additional one..
-    comps = list(inputs[dataset].keys())
-    bids_intersect[dataset] = inputs[dataset][comps[0]]
-
-    if len(comps) > 0:
-        for c in comps[1:]:
-            bids_intersect[dataset] = bids_intersect[dataset].filter(
-                **inputs[dataset][c].entities[tuple(subj_wildcards[dataset].keys())]
-            )
-
+if len(comps) > 0:
+    for c in comps[1:]:
+        bids_intersect = bids_intersect.filter(
+            **inputs[c].entities[tuple(subj_wildcards.keys())]
+        )
 
 from query_configs import load_app_config
 
 # Repository URL for app configurations
-repo_url = 'resources/bids-apps-configs'
+repo_url = '../resources/bids-apps-configs'
 
 
 # Dynamically load app configurations
 apps_to_run = config["apps_to_run"]
 print(apps_to_run)
-app_configs = {app:load_app_config(repo_url, appinfo['name'], appinfo['version']) for app,appinfo in apps_to_run.items()}
+app_configs = {app:load_app_config(repo_url, app) for app in apps_to_run}
 
 print(app_configs)
 
 
-datasets=['ds005602']
-
 rule all:
     input:
-        bids_intersect[dataset].expand(
-            bids(root='{dataset}/derivatives/{app}', 
+        bids_intersect.expand(
+            bids(root='derivatives/{app}', 
                 suffix='out.zip',
-                **bids_intersect[dataset].input_wildcards),
-            app=apps_to_run.keys(),dataset=config['datasets'].keys())
+                **bids_intersect.input_wildcards),
+            app=apps_to_run)
 
 
 
 
-for dataset in config["datasets"].keys():
+for app in apps_to_run:
 
 
-    for app in apps_to_run.keys():
+    if "container" in app_configs[app]:
 
-
-        if "container" in app_configs[app].keys():
-
-            rule:
-                name:
-                    f"get_container_{app}"
-                container:
-                    app_configs[app]['container']
-                output:
-                    f"resources/containers/{app}.sif",
-                localrule: True
-                shell:
-                    "ln -sv $SINGULARITY_CONTAINER {output}"
-
-        if 'container' in app_configs[app]:
-            rule:
-                name:
-                    f"{dataset}_{app}"
-                input:
-                    bids="{dataset}/bids",
-                    container="resources/containers/{app}.sif",
-                params:
-                    default_opts = app_configs[app]['default_opts'],
-                    args=lambda wildcards, input, output: format(apps_to_run[app]['args']),
-                    analysis_level=app_configs[app]['analysis_level']
-
-                output:
-                    zipfile=bids(root=f'{{dataset,{dataset}}}/derivatives/{{app,{app}}}',
-                                    suffix='out.zip',
-                                    **bids_intersect[dataset].input_wildcards)
-                script:
-                    "scripts/container_runscript.py"
-
-        else:
-            rule:
-                name:
-                    f"{dataset}_{app}"
-                input:
-                    bids="{dataset}/bids",
-                params:
-                    app_args=lambda wildcards, input, output: format(apps_to_run[wildcards.app]['args'])
-                output:
-                    bids(root=f'{{dataset,{dataset}}}/derivatives/{{app,{app}}}',
-                                    suffix='out.zip',
-                                    **bids_intersect[dataset].input_wildcards)
-                shell:
-                    "resources/snakebids_runscript.sh {params.app_args}"
-
-        
-        #add rule for combining zip files
         rule:
             name:
-                f"{dataset}_{app}_combine"
-            input:
-                bids_intersect[dataset].expand(
-                    bids(root=f'{dataset}/derivatives/{app}', 
-                    suffix='out.zip',
-                    **bids_intersect[dataset].input_wildcards))
+                f"get_container_{app}"
+            container:
+                app_configs[app]['container']
             output:
-                zipfile=f'{{dataset,{dataset}}}/derivatives/{{app,{app}}}/{{dataset}}_{{app}}.zip',
+                f"resources/containers/{app}.sif",
+            localrule: True
+            shell:
+                "ln -sv $SINGULARITY_CONTAINER {output}"
+
+        rule:
+            name:
+                f"{app}"
+            input:
+                bids=bids_dir,
+                container="resources/containers/{app}.sif",
+            params:
+                default_opts = app_configs[app]['default_opts'],
+                analysis_level=app_configs[app]['analysis_level']
+
+            output:
+                zipfile=bids(root=f'derivatives/{{app,{app}}}',
+                                suffix='out.zip',
+                                **bids_intersect.input_wildcards)
             script:
-                "scripts/merge_zip.py"
+                "scripts/container_runscript.py"
+
+    #we have a snakebids app 
+    else:
+
+        rule:
+            name:
+                f"get_repo_{app}"
+            params:
+                url = app_configs[app]['url'],
+                tag = app_configs[app]['tag'],
+            output:
+                repo=directory(f"resources/repos/{app}")
+            localrule: True
+            shell:
+                "git clone {params.url} -b {params.tag} {output.repo}"
+
+
+        rule:
+            name:
+                f"{app}"
+            input:
+                bids=bids_dir,
+                repo="resources/repos/{app}",
+            output:
+                bids(root=f'derivatives/{{app,{app}}}',
+                                suffix='out.zip',
+                                **bids_intersect.input_wildcards)
+            script:
+                "scripts/snakebids_runscript.py"
+
+    
+    #add rule for combining zip files
+    rule:
+        name:
+            f"{app}_combine"
+        input:
+            bids_intersect.expand(
+                bids(root=f'derivatives/{app}', 
+                suffix='out.zip',
+                **bids_intersect.input_wildcards))
+        output:
+            zipfile=f'derivatives/{{app,{app}}}/{{app}}.zip',
+        script:
+            "scripts/merge_zip.py"
 
 
 

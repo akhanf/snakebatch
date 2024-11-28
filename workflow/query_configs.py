@@ -13,10 +13,10 @@ def load_manifest(repo_url):
             return json.load(f)
 
 # Load a specific app configuration
-def load_app_config(repo_url, app_name, app_version):
+def load_app_config(repo_url, app_name):
     manifest = load_manifest(repo_url)
     print(manifest)
-    app_entry = next((app for app in manifest["apps"] if app["name"] == app_name and app["version"] == app_version), None)
+    app_entry = next((app for app in manifest["apps"] if app["name"] == app_name), None)
     if not app_entry:
         raise ValueError(f"App {app_name} not found in manifest.")
     app_path = app_entry["path"]

@@ -19,6 +19,8 @@ with tempfile.TemporaryDirectory(dir=snakemake.resources.tmpdir) as temp_dir:
     ]
 
     # Add additional parameters if defined
+    if snakemake.params.args:
+        singularity_command.extend(snakemake.params.args.split())
     if snakemake.params.default_opts:
         singularity_command.extend(snakemake.params.default_opts.split())
     

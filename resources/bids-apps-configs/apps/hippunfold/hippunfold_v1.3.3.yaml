@@ -1,6 +1,5 @@
-name: hippunfold
-version: v1.3.3
-container: 'docker://khanlab/hippunfold:v1.3.3.sif'
+name: hippunfold_v1.3.3
+container: 'docker://khanlab/hippunfold:v1.3.3'
 opts: '--modality T1w --atlas bigbrain'
 input_to_filter: T1w  #must use the input name from the app
 resources:
@@ -8,5 +7,3 @@ resources:
   mem_mb: 32000
   runtime: 360 
   gpus: 0
-args: "{input} {output} participant"
-
