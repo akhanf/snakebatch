@@ -70,6 +70,18 @@ defaults:
 # configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
 parse_args:
+  bids_dir:
+    help: |
+      BIDS dataset
+  output_dir:
+    help: |
+      Output directory
+
+  apps_to_run:
+    help: |
+      Names of BIDS Apps to run on the BIDS dataset. List of configured BIDS apps can be displayed with ...
+    nargs: "+"
+
   --skip-bids-validation:
     help: |
       Skip validation of BIDS dataset. BIDS validation is performed by default
@@ -78,12 +90,7 @@ parse_args:
     dest: "plugins.validator.skip"
     action: "store_true"
     default: False
-  --run:
-    help: |
-      Apps to run
-    dest: "apps_to_run"
-    action: "append"
-    default: []
+
 
 
 

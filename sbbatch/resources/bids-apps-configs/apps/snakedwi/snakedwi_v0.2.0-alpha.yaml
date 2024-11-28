@@ -2,8 +2,9 @@ name: snakedwi_v0.2.0-alpha
 url: 'http://github.com/akhanf/snakedwi'
 tag: 'v0.2.0-alpha'
 runscript: 'snakedwi/run.py' #relative to the app repo
-opts: ''
+opts: '--until import_t1 -c all'
 input_to_filter: dwi #e.g. for --filter-dw
+analysis_level: participant
 singularity_opts: '--nv'
 resources:
   cores: 8

@@ -38,23 +38,18 @@ if len(comps) > 0:
 from query_configs import load_app_config
 
 # Repository URL for app configurations
-repo_url = '../resources/bids-apps-configs'
+repo_url = str(Path(workflow.basedir) / '..' / 'resources' /'bids-apps-configs')
 
 
 # Dynamically load app configurations
 apps_to_run = config["apps_to_run"]
-print(apps_to_run)
 app_configs = {app:load_app_config(repo_url, app) for app in apps_to_run}
 
-print(app_configs)
 
 
 rule all:
     input:
-        bids_intersect.expand(
-            bids(root='derivatives/{app}', 
-                suffix='out.zip',
-                **bids_intersect.input_wildcards),
+        expand('derivatives/{app}/{app}.zip',
             app=apps_to_run)
 
 
@@ -83,7 +78,7 @@ for app in apps_to_run:
                 bids=bids_dir,
                 container="resources/containers/{app}.sif",
             params:
-                default_opts = app_configs[app]['default_opts'],
+                default_opts = app_configs[app]['opts'],
                 analysis_level=app_configs[app]['analysis_level']
 
             output:
@@ -115,6 +110,10 @@ for app in apps_to_run:
             input:
                 bids=bids_dir,
                 repo="resources/repos/{app}",
+            params:
+                runscript = app_configs[app]['runscript'],
+                default_opts = app_configs[app]['opts'],
+                analysis_level=app_configs[app]['analysis_level']
             output:
                 bids(root=f'derivatives/{{app,{app}}}',
                                 suffix='out.zip',

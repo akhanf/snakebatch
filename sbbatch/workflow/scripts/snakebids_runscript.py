@@ -9,26 +9,24 @@ with tempfile.TemporaryDirectory(dir=snakemake.resources.tmpdir) as temp_dir:
     temp_dir_path = Path(temp_dir) / "out"
     temp_dir_path.mkdir(parents=True, exist_ok=True)  # Create the 'out' subdirectory
 
-    # Prepare the Singularity command
-    singularity_command = [
-        "singularity", "run", "-e",
-        str(snakemake.input.container),
+
+    # Prepare the snakebids run
+    command = [
+        str(Path(snakemake.input.repo) / snakemake.params.runscript),
         str(snakemake.input.bids),
         str(temp_dir_path),
         str(snakemake.params.analysis_level)
     ]
 
     # Add additional parameters if defined
-    if snakemake.params.args:
-        singularity_command.extend(snakemake.params.args.split())
     if snakemake.params.default_opts:
-        singularity_command.extend(snakemake.params.default_opts.split())
+        command.extend(snakemake.params.default_opts.split())
     
     # Add wildcard parameters
-    singularity_command.extend(["--participant-label", str(snakemake.wildcards.subject)])
+    command.extend(["--participant-label", str(snakemake.wildcards.subject)])
 
-    # Execute the Singularity command
-    subprocess.run(singularity_command, check=True)
+    # Execute the console script
+    subprocess.run(command, check=True)
 
     # Define paths for input and output
     zipfile_path = Path(snakemake.output.zipfile)
