@@ -25,13 +25,17 @@ pybids_inputs:  #can be overriden in the dataset
       suffix: 'T1w'
       extension: '.nii.gz'
       datatype: 'anat'
-      subject: 
-        - '1'
-        - '11'
-        - '12'
-        - '13'
-        - '14'
-        - '15'
+        
+    wildcards:
+      - subject
+      - session
+      - acquisition
+      - run
+  dwi:
+    filters:
+      suffix: 'dwi'
+      extension: '.nii.gz'
+      datatype: 'dwi'
         
     wildcards:
       - subject
