@@ -21,8 +21,15 @@ def get_files_in_zip(zip_path):
 def extract_file(zip_path, file_name, output_dir):
     """Extract a specific file from a zip archive to the output directory."""
     with zipfile.ZipFile(zip_path, 'r') as z:
-        z.extract(file_name, output_dir)
-    return os.path.join(output_dir, file_name)
+        try:
+            # Ensure directory structure exists before extracting
+            file_path = os.path.join(output_dir, file_name)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            z.extract(file_name, output_dir)
+            return file_path
+        except FileExistsError:
+            # Handle potential race condition where the directory was created simultaneously
+            pass
 
 def compute_checksum(file_path):
     """Compute the SHA256 checksum of a file."""

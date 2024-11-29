@@ -115,7 +115,7 @@ for app in apps_to_run:
                 default_opts = app_configs[app]['opts'],
                 analysis_level=app_configs[app]['analysis_level']
             output:
-                bids(root=f'derivatives/{{app,{app}}}',
+                zipfile=bids(root=f'derivatives/{{app,{app}}}',
                                 suffix='out.zip',
                                 **bids_intersect.input_wildcards)
             script:
